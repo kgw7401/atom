@@ -1,0 +1,56 @@
+domain: boxing
+
+actions:
+  - guard
+  - jab
+  - cross
+  - lead_hook
+  - rear_hook
+  - lead_uppercut
+  - rear_uppercut
+
+# MediaPipe landmark indices for upper body (9 keypoints)
+keypoints:
+  indices: [0, 11, 12, 13, 14, 15, 16, 23, 24]
+  names:
+    - nose
+    - left_shoulder
+    - right_shoulder
+    - left_elbow
+    - right_elbow
+    - left_wrist
+    - right_wrist
+    - left_hip
+    - right_hip
+
+pipeline:
+  fps: 30
+  window_size: 30   # frames
+  stride: 5         # frames
+  visibility_threshold: 0.5
+  nan_ratio_threshold: 0.3
+
+  smoothing:
+    method: savgol
+    window_length: 7
+    polyorder: 2
+
+  normalization:
+    center: hip_center      # midpoint of left_hip + right_hip
+    scale: shoulder_width   # distance between shoulders
+
+collection:
+  angles:
+    - front
+    - left45
+    - right45
+  speeds:
+    - slow
+    - normal
+    - fast
+  # filename: {subject}_{action}_{angle}_{speed}.mp4
+
+data:
+  raw_dir: data/raw
+  keypoints_dir: data/keypoints
+  processed_dir: data/processed
