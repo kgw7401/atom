@@ -1,0 +1,14 @@
+{
+  "subject": "front",
+  "action": "cross",
+  "source_video": "charlie_cross_front_normal.mp4",
+  "start_frame": 379,
+  "end_frame": 388,
+  "num_frames": 9,
+  "shape": [
+    9,
+    33,
+    4
+  ],
+  "fps": 30.0
+}

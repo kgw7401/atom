@@ -1,0 +1,14 @@
+{
+  "subject": "right45",
+  "action": "cross",
+  "source_video": "charlie_cross_right45_normal.mp4",
+  "start_frame": 359,
+  "end_frame": 369,
+  "num_frames": 10,
+  "shape": [
+    10,
+    33,
+    4
+  ],
+  "fps": 30.0
+}

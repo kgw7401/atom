@@ -1,0 +1,14 @@
+{
+  "subject": "front",
+  "action": "jab",
+  "source_video": "charlie_jab_front_normal.mp4",
+  "start_frame": 453,
+  "end_frame": 461,
+  "num_frames": 8,
+  "shape": [
+    8,
+    33,
+    4
+  ],
+  "fps": 30.0
+}

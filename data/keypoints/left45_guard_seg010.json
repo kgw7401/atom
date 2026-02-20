@@ -1,0 +1,14 @@
+{
+  "subject": "left45",
+  "action": "guard",
+  "source_video": "charlie_guard_left45_normal.mp4",
+  "start_frame": 408,
+  "end_frame": 436,
+  "num_frames": 28,
+  "shape": [
+    28,
+    33,
+    4
+  ],
+  "fps": 30.0
+}
