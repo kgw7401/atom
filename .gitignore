@@ -1,0 +1,33 @@
+.omc/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+.venv/
+venv/
+
+# Data (large files - keep structure, not content)
+data/raw/**/*.mp4
+data/raw/**/*.avi
+data/raw/**/*.mov
+# data/keypoints/ — committed (small, ~300KB each)
+data/processed/**/*.parquet
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Models (large binary files)
+models/*.task
+
+# Misc
+*.log
