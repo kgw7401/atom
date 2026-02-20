@@ -11,9 +11,11 @@ actions:
 
 # MediaPipe landmark indices for upper body (9 keypoints)
 keypoints:
-  indices: [0, 11, 12, 13, 14, 15, 16, 23, 24]
+  indices: [0, 7, 8, 11, 12, 13, 14, 15, 16, 23, 24]  # add ears
   names:
     - nose
+    - left_ear
+    - right_ear
     - left_shoulder
     - right_shoulder
     - left_elbow
@@ -25,14 +27,14 @@ keypoints:
 
 pipeline:
   fps: 30
-  window_size: 30   # frames
-  stride: 5         # frames
+  window_size: 6    # frames (min segment length across all actions)
+  stride: 2         # frames
   visibility_threshold: 0.5
   nan_ratio_threshold: 0.3
 
   smoothing:
     method: savgol
-    window_length: 7
+    window_length: 5
     polyorder: 2
 
   normalization:
