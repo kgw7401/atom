@@ -39,6 +39,7 @@ class PipelineConfig:
     right_hip_idx: int  # index of right_hip in selected keypoints
     left_shoulder_idx: int
     right_shoulder_idx: int
+    use_velocity: bool = False
 
     @classmethod
     def from_yaml(cls, path: str | Path = "configs/boxing.yaml") -> PipelineConfig:
@@ -48,6 +49,7 @@ class PipelineConfig:
         indices = cfg["keypoints"]["indices"]
         names = cfg["keypoints"]["names"]
         pipe = cfg["pipeline"]
+        features = pipe.get("features", {})
 
         return cls(
             keypoint_indices=indices,
@@ -61,6 +63,7 @@ class PipelineConfig:
             right_hip_idx=names.index("right_hip"),
             left_shoulder_idx=names.index("left_shoulder"),
             right_shoulder_idx=names.index("right_shoulder"),
+            use_velocity=features.get("velocity", False),
         )
 
 
@@ -101,6 +104,15 @@ class PreprocessingPipeline:
 
         # 6. Savitzky-Golay smoothing
         coords = self._smooth(coords)
+
+        # 6b. Velocity features (frame-to-frame diff, prepend zeros)
+        if self.cfg.use_velocity:
+            velocity = np.concatenate(
+                [np.zeros((1, coords.shape[1], 3), dtype=coords.dtype),
+                 np.diff(coords, axis=0)],
+                axis=0,
+            )
+            coords = np.concatenate([coords, velocity], axis=2)  # (N, K, 6)
 
         # 7. Sliding window
         windows = self._sliding_window(coords)
@@ -168,13 +180,13 @@ class PreprocessingPipeline:
         return coords
 
     def _sliding_window(self, coords: np.ndarray) -> np.ndarray:
-        """Create overlapping windows: (N, K, 3) → (W, window_size, K, 3)."""
+        """Create overlapping windows: (N, K, C) → (W, window_size, K, C)."""
         N = coords.shape[0]
         ws = self.cfg.window_size
         stride = self.cfg.stride
 
         if N < ws:
-            return np.empty((0, ws, coords.shape[1], 3), dtype=np.float32)
+            return np.empty((0, ws, coords.shape[1], coords.shape[2]), dtype=np.float32)
 
         starts = range(0, N - ws + 1, stride)
         windows = np.stack([coords[i : i + ws] for i in starts])

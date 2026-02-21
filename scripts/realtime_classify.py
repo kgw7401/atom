@@ -107,6 +107,14 @@ def preprocess_window(
     shoulder_dist = np.maximum(shoulder_dist, 1e-6)
     coords = coords / shoulder_dist[:, np.newaxis, np.newaxis]
 
+    if cfg.use_velocity:
+        velocity = np.concatenate(
+            [np.zeros((1, coords.shape[1], 3), dtype=coords.dtype),
+             np.diff(coords, axis=0)],
+            axis=0,
+        )
+        coords = np.concatenate([coords, velocity], axis=2)  # (W, K, 6)
+
     return coords.flatten().astype(np.float32)
 
 
