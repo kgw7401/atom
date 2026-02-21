@@ -1,0 +1,14 @@
+{
+  "subject": "lead_hook_left45",
+  "action": "lead_hook",
+  "source_video": "charlie_lead_hook_left45_normal.mp4",
+  "start_frame": 42,
+  "end_frame": 54,
+  "num_frames": 12,
+  "shape": [
+    12,
+    33,
+    4
+  ],
+  "fps": 30.0
+}

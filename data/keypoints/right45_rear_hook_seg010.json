@@ -1,0 +1,14 @@
+{
+  "subject": "right45",
+  "action": "rear_hook",
+  "source_video": "charlie_rear_hook_right45_normal.mp4",
+  "start_frame": 243,
+  "end_frame": 260,
+  "num_frames": 17,
+  "shape": [
+    17,
+    33,
+    4
+  ],
+  "fps": 30.0
+}

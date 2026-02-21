@@ -1,0 +1,14 @@
+{
+  "subject": "video",
+  "action": "rear_bodyshot",
+  "source_video": "charlie_rear_bodyshot.mp4",
+  "start_frame": 602,
+  "end_frame": 616,
+  "num_frames": 14,
+  "shape": [
+    14,
+    33,
+    4
+  ],
+  "fps": 30.0
+}

@@ -8,6 +8,8 @@ actions:
   - rear_hook
   - lead_uppercut
   - rear_uppercut
+  - lead_bodyshot
+  - rear_bodyshot
 
 # MediaPipe landmark indices for upper body (9 keypoints)
 keypoints:
@@ -36,6 +38,9 @@ pipeline:
     method: savgol
     window_length: 5
     polyorder: 2
+
+  features:
+    velocity: true   # frame-to-frame velocity channels (helps distinguish direction)
 
   normalization:
     center: hip_center      # midpoint of left_hip + right_hip

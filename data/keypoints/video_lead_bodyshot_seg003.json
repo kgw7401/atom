@@ -1,0 +1,14 @@
+{
+  "subject": "video",
+  "action": "lead_bodyshot",
+  "source_video": "charlie_lead_bodyshot.mp4",
+  "start_frame": 120,
+  "end_frame": 131,
+  "num_frames": 11,
+  "shape": [
+    11,
+    33,
+    4
+  ],
+  "fps": 30.0
+}

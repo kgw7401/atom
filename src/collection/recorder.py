@@ -24,15 +24,20 @@ def load_config(config_path: str | Path = "configs/boxing.yaml") -> dict:
         return yaml.safe_load(f)
 
 
-def make_filename(subject: str, action: str, angle: str, speed: str) -> str:
-    return f"{subject}_{action}_{angle}_{speed}.mp4"
+def make_filename(subject: str, action: str, angle: str | None, speed: str | None) -> str:
+    parts = [subject, action]
+    if angle:
+        parts.append(angle)
+    if speed:
+        parts.append(speed)
+    return "_".join(parts) + ".mp4"
 
 
 def record(
     subject: str,
     action: str,
-    angle: str,
-    speed: str,
+    angle: str | None = None,
+    speed: str | None = None,
     output_dir: Path = Path("data/raw"),
     camera: int = 0,
     fps: float = 30.0,
@@ -83,7 +88,12 @@ def record(
     frame_count = 0
     rec_start = 0.0
 
-    label = f"{subject} | {action} | {angle} | {speed}"
+    label_parts = [subject, action]
+    if angle:
+        label_parts.append(angle)
+    if speed:
+        label_parts.append(speed)
+    label = " | ".join(label_parts)
     print(f"Session: {label}")
     print(f"Camera: {actual_w}x{actual_h} @ {actual_fps:.0f}fps")
     print(f"Output: {filename}")
@@ -139,9 +149,14 @@ def record(
                 )
 
             # Labels at bottom
+            bottom_label = action.upper()
+            if angle:
+                bottom_label += f"  |  {angle}"
+            if speed:
+                bottom_label += f"  |  {speed}"
             cv2.putText(
                 display,
-                f"{action.upper()}  |  {angle}  |  {speed}",
+                bottom_label,
                 (10, actual_h - 20),
                 cv2.FONT_HERSHEY_SIMPLEX,
                 1.0,
@@ -191,8 +206,8 @@ def main():
     parser = argparse.ArgumentParser(description="Record boxing pose videos")
     parser.add_argument("--subject", "-s", required=True, help="Subject name (e.g. charlie)")
     parser.add_argument("--action", "-a", required=True, choices=actions)
-    parser.add_argument("--angle", required=True, choices=angles, help="Camera angle")
-    parser.add_argument("--speed", required=True, choices=speeds, help="Movement speed")
+    parser.add_argument("--angle", choices=angles, default=None, help="Camera angle (optional)")
+    parser.add_argument("--speed", choices=speeds, default=None, help="Movement speed (optional)")
     parser.add_argument("--camera", "-c", type=int, default=0)
     parser.add_argument("--output", "-o", type=str, default="data/raw")
     args = parser.parse_args()
