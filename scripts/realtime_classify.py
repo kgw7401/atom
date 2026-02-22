@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Real-time action classification from webcam.
+"""Real-time boxing action classification from webcam using LSTM.
 
-Trains an RF model on existing data, then classifies live webcam feed
+Loads a pretrained LSTM model and classifies live webcam feed
 using a sliding window of keypoints.
 
 Usage:
@@ -17,64 +17,44 @@ from pathlib import Path
 import cv2
 import mediapipe as mp
 import numpy as np
-from sklearn.ensemble import RandomForestClassifier
+import torch
 
-from src.preprocessing.pipeline import PreprocessingPipeline, PipelineConfig
+from src.models.lstm import BoxingLSTM
+from src.preprocessing.pipeline import PipelineConfig
 
 
-def train_model(
-    keypoints_dir: Path = Path("data/keypoints"),
-) -> tuple[RandomForestClassifier, list[str], PreprocessingPipeline]:
-    """Train RF on all available data. Returns (model, class_names, pipeline)."""
-    import json
+def load_model(
+    checkpoint_path: Path = Path("models/lstm_best.pt"),
+) -> tuple[BoxingLSTM, list[str], np.ndarray, np.ndarray]:
+    """Load pretrained LSTM. Returns (model, class_names, scaler_mean, scaler_scale)."""
+    ckpt = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
 
-    pipeline = PreprocessingPipeline()
-    all_windows = []
-    all_labels = []
-    class_set = set()
+    model = BoxingLSTM(
+        input_size=ckpt["input_size"],
+        num_classes=len(ckpt["class_names"]),
+    )
+    model.load_state_dict(ckpt["state_dict"])
+    model.eval()
 
-    for npy_path in sorted(keypoints_dir.glob("*.npy")):
-        meta_path = npy_path.with_suffix(".json")
-        if not meta_path.exists():
-            continue
-        with open(meta_path) as f:
-            meta = json.load(f)
-
-        action = meta["action"]
-        class_set.add(action)
-        raw = np.load(npy_path)
-        windows = pipeline.process(raw)
-        if windows.size == 0:
-            continue
-        all_windows.append(windows)
-        all_labels.extend([action] * len(windows))
-
-    class_names = sorted(class_set)
-    label_to_idx = {name: i for i, name in enumerate(class_names)}
-
-    X = np.concatenate(all_windows, axis=0)
-    X = X.reshape(X.shape[0], -1)
-    y = np.array([label_to_idx[label] for label in all_labels])
-
-    rf = RandomForestClassifier(n_estimators=100, max_depth=20, random_state=42, n_jobs=-1)
-    rf.fit(X, y)
-
-    return rf, class_names, pipeline
+    return model, ckpt["class_names"], ckpt["scaler_mean"], ckpt["scaler_scale"]
 
 
 def preprocess_window(
     buffer: np.ndarray,
     cfg: PipelineConfig,
+    scaler_mean: np.ndarray,
+    scaler_scale: np.ndarray,
 ) -> np.ndarray | None:
-    """Preprocess a single window buffer (window_size, 33, 4) → flat feature vector.
+    """Preprocess a single window (window_size, 33, 4) -> (window_size, K*C) scaled.
 
-    Returns flattened (window_size * K * 3,) array, or None if invalid.
+    Returns (window_size, features) float32 array, or None if invalid.
     """
     K = len(cfg.keypoint_indices)
+    C = 3 if cfg.use_z else 2
 
     # Select keypoints
     selected = buffer[:, cfg.keypoint_indices, :]  # (W, K, 4)
-    coords = selected[:, :, :3].copy()
+    coords = selected[:, :, :C].copy()
     vis = selected[:, :, 3]
 
     # Mask low visibility
@@ -84,7 +64,7 @@ def preprocess_window(
     # Interpolate NaN
     N = coords.shape[0]
     for k in range(K):
-        for c in range(3):
+        for c in range(C):
             series = coords[:, k, c]
             nans = np.isnan(series)
             if nans.all() or not nans.any():
@@ -109,13 +89,23 @@ def preprocess_window(
 
     if cfg.use_velocity:
         velocity = np.concatenate(
-            [np.zeros((1, coords.shape[1], 3), dtype=coords.dtype),
+            [np.zeros((1, coords.shape[1], coords.shape[2]), dtype=coords.dtype),
              np.diff(coords, axis=0)],
             axis=0,
         )
-        coords = np.concatenate([coords, velocity], axis=2)  # (W, K, 6)
+        coords = np.concatenate([coords, velocity], axis=2)  # (W, K, 2*C)
 
-    return coords.flatten().astype(np.float32)
+    # (window_size, K, C) -> (window_size, K*C)
+    T = coords.shape[0]
+    features = coords.reshape(T, -1).astype(np.float32)
+
+    # Fill NaN survivors with 0 (hip-centered, so 0 = body center)
+    np.nan_to_num(features, nan=0.0, copy=False)
+
+    # StandardScaler (same as training)
+    features = ((features - scaler_mean) / scaler_scale).astype(np.float32)
+
+    return features
 
 
 def main():
@@ -123,10 +113,10 @@ def main():
     parser.add_argument("--camera", "-c", type=int, default=0)
     args = parser.parse_args()
 
-    # Train model
-    print("Training model on existing data...")
-    model, class_names, pipeline = train_model()
-    cfg = pipeline.cfg
+    # Load model
+    print("Loading LSTM model...")
+    cfg = PipelineConfig.from_yaml()
+    model, class_names, scaler_mean, scaler_scale = load_model()
     print(f"Model ready. Classes: {class_names}")
 
     # Colors per class for display
@@ -139,6 +129,7 @@ def main():
         (255, 255, 0),   # cyan
         (0, 0, 255),     # red
         (255, 0, 0),     # blue
+        (128, 255, 128), # light green
     ]
 
     # Setup webcam
@@ -166,6 +157,15 @@ def main():
     confidence = 0.0
     pred_color = (255, 255, 255)
     stride_counter = 0
+
+    # Transition filter: after an attack, must return to guard before next attack.
+    # Recovery motion from a punch looks like a different punch to the model,
+    # but in boxing you always return to guard between actions.
+    HOLD_SECONDS = 0.3
+    CONFIDENCE_THRESHOLD = 0.7  # below this → fall back to guard
+    last_attack_time = 0.0
+    guard_idx = class_names.index("guard")
+    last_was_attack = False  # True after a non-guard prediction
 
     print(f"Window: {cfg.window_size} frames, stride: {cfg.stride}")
     print("Press 'q' to quit")
@@ -209,14 +209,44 @@ def main():
                 if len(buffer) == cfg.window_size and stride_counter >= cfg.stride:
                     stride_counter = 0
                     buf_array = np.stack(list(buffer))  # (window_size, 33, 4)
-                    features = preprocess_window(buf_array, cfg)
+                    features = preprocess_window(buf_array, cfg, scaler_mean, scaler_scale)
 
                     if features is not None:
-                        proba = model.predict_proba(features.reshape(1, -1))[0]
+                        x = torch.from_numpy(features).unsqueeze(0)  # (1, T, F)
+                        with torch.no_grad():
+                            logits = model(x)
+                            proba = torch.softmax(logits, dim=1)[0].numpy()
                         pred_idx = proba.argmax()
-                        prediction = class_names[pred_idx]
-                        confidence = proba[pred_idx]
-                        pred_color = colors[pred_idx % len(colors)]
+                        new_pred = class_names[pred_idx]
+                        new_conf = proba[pred_idx]
+                        now = time.time()
+
+                        # Low confidence on transition windows → fall back to guard
+                        if new_pred != "guard" and new_conf < CONFIDENCE_THRESHOLD:
+                            new_pred = "guard"
+                            new_conf = proba[guard_idx]
+                            pred_idx = guard_idx
+
+                        # Transition filter: attack→attack is invalid in boxing.
+                        # After an attack, you must return to guard first.
+                        # This blocks the recovery motion being misread as
+                        # a different punch (e.g. hook recovery → "cross").
+                        if new_pred != "guard" and last_was_attack and now - last_attack_time < HOLD_SECONDS:
+                            new_pred = prediction  # keep previous attack during hold
+                            new_conf = confidence
+
+                        # Update state
+                        if new_pred != "guard":
+                            prediction = new_pred
+                            confidence = new_conf
+                            pred_color = colors[pred_idx % len(colors)]
+                            last_attack_time = now
+                            last_was_attack = True
+                        elif now - last_attack_time >= HOLD_SECONDS:
+                            prediction = new_pred
+                            confidence = new_conf
+                            pred_color = colors[pred_idx % len(colors)]
+                            last_was_attack = False
 
             # Display prediction
             if prediction:

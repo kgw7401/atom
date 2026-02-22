@@ -40,6 +40,7 @@ class PipelineConfig:
     left_shoulder_idx: int
     right_shoulder_idx: int
     use_velocity: bool = False
+    use_z: bool = True
 
     @classmethod
     def from_yaml(cls, path: str | Path = "configs/boxing.yaml") -> PipelineConfig:
@@ -64,6 +65,7 @@ class PipelineConfig:
             left_shoulder_idx=names.index("left_shoulder"),
             right_shoulder_idx=names.index("right_shoulder"),
             use_velocity=features.get("velocity", False),
+            use_z=features.get("use_z", True),
         )
 
 
@@ -74,22 +76,24 @@ class PreprocessingPipeline:
         self.cfg = config or PipelineConfig.from_yaml()
 
     def process(self, raw_keypoints: np.ndarray) -> np.ndarray:
-        """Full pipeline: raw (N, 33, 4) → windows (W, window_size, K, 3).
+        """Full pipeline: raw (N, 33, 4) → windows (W, window_size, K, C).
 
         Args:
             raw_keypoints: (N, 33, 4) array [x, y, z, visibility]
 
         Returns:
-            (W, window_size, num_keypoints, 3) float32 array of valid windows.
+            (W, window_size, num_keypoints, C) float32 array of valid windows.
+            C=2 (xy) or C=3 (xyz) depending on use_z config.
             Returns empty array with correct shape if no valid windows.
         """
         K = len(self.cfg.keypoint_indices)
+        C = 3 if self.cfg.use_z else 2
 
         # 1. Select keypoints: (N, 33, 4) → (N, K, 4)
         selected = raw_keypoints[:, self.cfg.keypoint_indices, :]
 
         # 2. Split coords and visibility
-        coords = selected[:, :, :3].copy()  # (N, K, 3) - x, y, z
+        coords = selected[:, :, :C].copy()  # (N, K, C) - xy or xyz
         vis = selected[:, :, 3]              # (N, K)
 
         # 3. Mask low-visibility as NaN
@@ -108,11 +112,11 @@ class PreprocessingPipeline:
         # 6b. Velocity features (frame-to-frame diff, prepend zeros)
         if self.cfg.use_velocity:
             velocity = np.concatenate(
-                [np.zeros((1, coords.shape[1], 3), dtype=coords.dtype),
+                [np.zeros((1, coords.shape[1], coords.shape[2]), dtype=coords.dtype),
                  np.diff(coords, axis=0)],
                 axis=0,
             )
-            coords = np.concatenate([coords, velocity], axis=2)  # (N, K, 6)
+            coords = np.concatenate([coords, velocity], axis=2)  # (N, K, 2*C)
 
         # 7. Sliding window
         windows = self._sliding_window(coords)
