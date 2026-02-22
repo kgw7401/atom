@@ -30,7 +30,7 @@ keypoints:
 pipeline:
   fps: 30
   window_size: 6    # frames (min segment length across all actions)
-  stride: 2         # frames
+  stride: 1         # frames (was 2, reduced for faster combo detection)
   visibility_threshold: 0.5
   nan_ratio_threshold: 0.3
 
@@ -62,3 +62,79 @@ data:
   raw_dir: data/raw
   keypoints_dir: data/keypoints
   processed_dir: data/processed
+
+drills:
+  timing:
+    # Level-specific timing (difficulty increases with level)
+    level_1:
+      reaction_window: 3.0      # seconds to start after instruction
+      guard_return_window: 1.2  # seconds to return to guard after last punch
+      combo_gap_max: 1.5        # max seconds between actions in a combo
+      inter_drill_pause: 2.5    # seconds between drills
+    level_2:
+      reaction_window: 2.0      # faster reaction required
+      guard_return_window: 1.0
+      combo_gap_max: 1.2        # tighter combo timing
+      inter_drill_pause: 2.0    # faster pace
+    level_3:
+      reaction_window: 1.5      # even faster
+      guard_return_window: 0.8
+      combo_gap_max: 1.0        # tight execution required
+      inter_drill_pause: 1.5    # intense pace, only 3+ action combos
+    feedback_display: 1.5       # faster feedback display
+
+  combos:
+    # Level 1: 단타 (Singles)
+    - { name: 잽, actions: [jab], level: 1 }
+    - { name: 투, actions: [cross], level: 1 }
+    - { name: 리드훅, actions: [lead_hook], level: 1 }
+    - { name: 리어훅, actions: [rear_hook], level: 1 }
+    - { name: 리드어퍼, actions: [lead_uppercut], level: 1 }
+    - { name: 리어어퍼, actions: [rear_uppercut], level: 1 }
+    - { name: 리드바디, actions: [lead_bodyshot], level: 1 }
+    - { name: 리어바디, actions: [rear_bodyshot], level: 1 }
+
+    # Level 2: 기본 콤보 (2-3 actions)
+    - { name: 원투, actions: [jab, cross], level: 2 }
+    - { name: 잽잽, actions: [jab, jab], level: 2 }
+    - { name: 잽훅, actions: [jab, rear_hook], level: 2 }
+    - { name: 투훅, actions: [cross, lead_hook], level: 2 }
+    - { name: 잽바디, actions: [jab, rear_bodyshot], level: 2 }
+    - { name: 투바디, actions: [cross, lead_bodyshot], level: 2 }
+    - { name: 훅투, actions: [lead_hook, cross], level: 2 }
+    - { name: 어퍼투, actions: [lead_uppercut, cross], level: 2 }
+    - { name: 원투훅, actions: [jab, cross, lead_hook], level: 2 }
+    - { name: 잽잽투, actions: [jab, jab, cross], level: 2 }
+    - { name: 원투바디, actions: [jab, cross, lead_bodyshot], level: 2 }
+    - { name: 바디투훅, actions: [lead_bodyshot, cross, lead_hook], level: 2 }
+
+    # Level 3: 고급 콤보 (3-4 actions)
+    - { name: 원투훅투, actions: [jab, cross, lead_hook, cross], level: 3 }
+    - { name: 원투어퍼, actions: [jab, cross, lead_uppercut], level: 3 }
+    - { name: 잽바디훅, actions: [jab, rear_bodyshot, lead_hook], level: 3 }
+    - { name: 잽잽잽투, actions: [jab, jab, jab, cross], level: 3 }
+    - { name: 투훅투, actions: [cross, lead_hook, cross], level: 3 }
+    - { name: 잽훅투훅, actions: [jab, lead_hook, cross, lead_hook], level: 3 }
+    - { name: 어퍼훅투, actions: [lead_uppercut, lead_hook, cross], level: 3 }
+    - { name: 바디바디투, actions: [lead_bodyshot, rear_bodyshot, cross], level: 3 }
+    - { name: 원투훅어퍼, actions: [jab, cross, lead_hook, lead_uppercut], level: 3 }
+    - { name: 잽잽투훅, actions: [jab, jab, cross, lead_hook], level: 3 }
+
+  tts:
+    voice: "Yuna"  # Korean TTS voice (use "say -v ?" to see all available voices)
+    rate: 200
+    # Customize these names to match your gym's terminology!
+    # Examples:
+    #   Number-based: jab: "One", cross: "Two", lead_hook: "Three"
+    #   Simple: jab: "Straight", cross: "Cross", lead_hook: "Hook"
+    #   Descriptive: jab: "Lead Hand", cross: "Rear Hand"
+    display_names:
+      guard: Guard
+      jab: Jab
+      cross: Cross
+      lead_hook: Lead Hook
+      rear_hook: Rear Hook
+      lead_uppercut: Lead Uppercut
+      rear_uppercut: Rear Uppercut
+      lead_bodyshot: Lead Body
+      rear_bodyshot: Rear Body
