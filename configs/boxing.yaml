@@ -41,6 +41,7 @@ pipeline:
 
   features:
     velocity: true   # frame-to-frame velocity channels (helps distinguish direction)
+    use_z: false     # drop z-coordinate (noisy, distance-dependent)
 
   normalization:
     center: hip_center      # midpoint of left_hip + right_hip

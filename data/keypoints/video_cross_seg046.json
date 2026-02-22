@@ -1,0 +1,14 @@
+{
+  "subject": "video",
+  "action": "cross",
+  "source_video": "charlie2_cross.mp4",
+  "start_frame": 554,
+  "end_frame": 564,
+  "num_frames": 10,
+  "shape": [
+    10,
+    33,
+    4
+  ],
+  "fps": 30.0
+}

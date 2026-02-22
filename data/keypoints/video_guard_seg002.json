@@ -1,0 +1,14 @@
+{
+  "subject": "video",
+  "action": "guard",
+  "source_video": "charlie_guard.mp4",
+  "start_frame": 571,
+  "end_frame": 720,
+  "num_frames": 149,
+  "shape": [
+    149,
+    33,
+    4
+  ],
+  "fps": 30.0
+}

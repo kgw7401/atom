@@ -1,0 +1,14 @@
+{
+  "subject": "video",
+  "action": "lead_uppercut",
+  "source_video": "charlie_lead_uppercut.mp4",
+  "start_frame": 171,
+  "end_frame": 180,
+  "num_frames": 9,
+  "shape": [
+    9,
+    33,
+    4
+  ],
+  "fps": 30.0
+}
