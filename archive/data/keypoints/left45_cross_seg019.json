@@ -1,0 +1,14 @@
+{
+  "subject": "left45",
+  "action": "cross",
+  "source_video": "charlie_cross_left45_normal.mp4",
+  "start_frame": 576,
+  "end_frame": 585,
+  "num_frames": 9,
+  "shape": [
+    9,
+    33,
+    4
+  ],
+  "fps": 30.0
+}

@@ -1,0 +1,14 @@
+{
+  "subject": "right45",
+  "action": "guard",
+  "source_video": "charlie_guard_right45_normal.mp4",
+  "start_frame": 299,
+  "end_frame": 324,
+  "num_frames": 25,
+  "shape": [
+    25,
+    33,
+    4
+  ],
+  "fps": 30.0
+}

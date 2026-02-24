@@ -1,0 +1,14 @@
+{
+  "subject": "video",
+  "action": "lead_hook",
+  "source_video": "charlie_lead_hook_front_normal.mp4",
+  "start_frame": 408,
+  "end_frame": 424,
+  "num_frames": 16,
+  "shape": [
+    16,
+    33,
+    4
+  ],
+  "fps": 30.0
+}

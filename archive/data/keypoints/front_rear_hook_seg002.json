@@ -1,0 +1,14 @@
+{
+  "subject": "front",
+  "action": "rear_hook",
+  "source_video": "charlie_rear_hook_front_normal.mp4",
+  "start_frame": 76,
+  "end_frame": 90,
+  "num_frames": 14,
+  "shape": [
+    14,
+    33,
+    4
+  ],
+  "fps": 30.0
+}

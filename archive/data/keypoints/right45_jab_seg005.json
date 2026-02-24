@@ -1,0 +1,14 @@
+{
+  "subject": "right45",
+  "action": "jab",
+  "source_video": "charlie_jab_right45_normal.mp4",
+  "start_frame": 173,
+  "end_frame": 180,
+  "num_frames": 7,
+  "shape": [
+    7,
+    33,
+    4
+  ],
+  "fps": 30.0
+}
