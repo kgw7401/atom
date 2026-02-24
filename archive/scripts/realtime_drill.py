@@ -20,7 +20,7 @@ import mediapipe as mp
 import numpy as np
 import torch
 
-from scripts.realtime_classify import load_model, preprocess_window
+from src.inference.utils import load_model, preprocess_window
 from src.preprocessing.pipeline import PipelineConfig
 from src.trainer.drill_engine import DrillEngine, DrillState
 

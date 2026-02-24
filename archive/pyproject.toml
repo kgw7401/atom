@@ -16,6 +16,16 @@ ml = [
     "torch>=2.0",
     "pyarrow>=14.0",
 ]
+server = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.34",
+    "sqlalchemy[asyncio]>=2.0",
+    "asyncpg>=0.30",
+    "alembic>=1.14",
+    "google-cloud-storage>=2.18",
+    "pydantic-settings>=2.6",
+    "python-multipart>=0.0.18",
+]
 
 [build-system]
 requires = ["hatchling"]
