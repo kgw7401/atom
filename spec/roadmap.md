@@ -11,7 +11,9 @@ Depends on: spec/overview.md, spec/state-vector.md, spec/runtime.md
 | Phase | Status | Summary |
 |-------|--------|---------|
 | Phase 1 | **DONE** | LSTM 9-class classifier, 99.7% accuracy, 623 segments |
-| Phase 2 | IN PROGRESS | FastAPI server skeleton exists, state system not yet implemented |
+| Phase 2a | **DONE** | State engine core: vector, observation, EMA update, confidence, DB schema |
+| Phase 2b | **DONE** | Vision → State pipeline: keypoint extraction, action classification, end-to-end pipeline |
+| Phase 2c+ | NOT STARTED | Policy engine, API, coaching, mobile |
 
 ---
 
