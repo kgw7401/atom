@@ -1,2 +1,4 @@
 .omc/
 .venv/
+__pycache__/
+*.pyc
