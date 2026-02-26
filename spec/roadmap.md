@@ -1,7 +1,7 @@
 # Implementation Roadmap
 
-Version: v0.1
-Last Updated: 2026-02-25
+Version: v0.2
+Last Updated: 2026-02-27
 Depends on: spec/overview.md, spec/state-vector.md, spec/runtime.md
 
 ---
@@ -11,9 +11,12 @@ Depends on: spec/overview.md, spec/state-vector.md, spec/runtime.md
 | Phase | Status | Summary |
 |-------|--------|---------|
 | Phase 1 | **DONE** | LSTM 9-class classifier, 99.7% accuracy, 623 segments |
-| Phase 2a | **DONE** | State engine core: vector, observation, EMA update, confidence, DB schema |
-| Phase 2b | **DONE** | Vision → State pipeline: keypoint extraction, action classification, end-to-end pipeline |
-| Phase 2c+ | NOT STARTED | Policy engine, API, coaching, mobile |
+| Phase 2a | **DONE** | State engine core: vector, observation, EMA update, confidence, DB schema (50 tests) |
+| Phase 2b | **DONE** | Vision → State pipeline: keypoint extraction, action classification, end-to-end pipeline (12 tests) |
+| Phase 2c | **DONE** | Policy engine: weakness detection, priority scoring, session planner, drill library (38 tests) |
+| Phase 2d | **DONE** | REST API: 9 endpoints, session lifecycle, async pipeline, idempotency (20 tests) |
+| Phase 2e | **DONE** | Coaching reports: template-based Korean coaching, progress trends (14 tests) |
+| Phase 2f | NOT STARTED | Mobile App MVP (React Native) |
 
 ---
 
