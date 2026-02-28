@@ -1,6 +1,0 @@
-.omc/
-.venv/
-__pycache__/
-*.pyc
-uploads/
-*.db
