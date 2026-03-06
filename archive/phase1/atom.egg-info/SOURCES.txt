@@ -1,0 +1,9 @@
+pyproject.toml
+atom.egg-info/PKG-INFO
+atom.egg-info/SOURCES.txt
+atom.egg-info/dependency_links.txt
+atom.egg-info/requires.txt
+atom.egg-info/top_level.txt
+src/__init__.py
+src/extraction/__init__.py
+src/extraction/pose_extractor.py

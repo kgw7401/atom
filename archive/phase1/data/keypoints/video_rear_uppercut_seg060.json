@@ -1,0 +1,14 @@
+{
+  "subject": "video",
+  "action": "rear_uppercut",
+  "source_video": "charlie2_rear_uppercut.mp4",
+  "start_frame": 630,
+  "end_frame": 645,
+  "num_frames": 15,
+  "shape": [
+    15,
+    33,
+    4
+  ],
+  "fps": 30.0
+}

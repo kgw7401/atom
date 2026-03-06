@@ -1,0 +1,4 @@
+usage: train_lstm.py [-h] [--epochs EPOCHS] [--hidden HIDDEN]
+                     [--layers LAYERS] [--dropout DROPOUT] [--lr LR]
+                     [--batch-size BATCH_SIZE] [--patience PATIENCE]
+train_lstm.py: error: unrecognized arguments:   

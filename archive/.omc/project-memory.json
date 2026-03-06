@@ -1,0 +1,247 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1772725416045,
+  "projectRoot": "/Users/kgw7401/atom/archive",
+  "techStack": {
+    "languages": [
+      {
+        "name": "Python",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "pyproject.toml"
+        ]
+      },
+      {
+        "name": "C/C++",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "Makefile"
+        ]
+      }
+    ],
+    "frameworks": [
+      {
+        "name": "fastapi",
+        "version": null,
+        "category": "backend"
+      },
+      {
+        "name": "pytest",
+        "version": null,
+        "category": "testing"
+      }
+    ],
+    "packageManager": null,
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": "make build",
+    "testCommand": "make test",
+    "lintCommand": "ruff check",
+    "devCommand": null,
+    "scripts": {}
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "scripts",
+      "src"
+    ],
+    "gitBranches": null
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "atom.egg-info": {
+      "path": "atom.egg-info",
+      "purpose": null,
+      "fileCount": 5,
+      "lastAccessed": 1772725416040,
+      "keyFiles": [
+        "PKG-INFO",
+        "SOURCES.txt",
+        "dependency_links.txt",
+        "requires.txt",
+        "top_level.txt"
+      ]
+    },
+    "configs": {
+      "path": "configs",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1772725416040,
+      "keyFiles": [
+        "boxing.yaml"
+      ]
+    },
+    "data": {
+      "path": "data",
+      "purpose": "Data files",
+      "fileCount": 1,
+      "lastAccessed": 1772725416040,
+      "keyFiles": []
+    },
+    "issues": {
+      "path": "issues",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1772725416040,
+      "keyFiles": []
+    },
+    "mobile": {
+      "path": "mobile",
+      "purpose": null,
+      "fileCount": 7,
+      "lastAccessed": 1772725416041,
+      "keyFiles": [
+        "App.tsx",
+        "app.json",
+        "index.ts",
+        "package-lock.json",
+        "package.json"
+      ]
+    },
+    "models": {
+      "path": "models",
+      "purpose": "Data models",
+      "fileCount": 3,
+      "lastAccessed": 1772725416041,
+      "keyFiles": [
+        "lstm_best.pt",
+        "lstm_best_old.pt",
+        "pose_landmarker.task"
+      ]
+    },
+    "scripts": {
+      "path": "scripts",
+      "purpose": "Build/utility scripts",
+      "fileCount": 9,
+      "lastAccessed": 1772725416041,
+      "keyFiles": [
+        "annotate_video.py",
+        "demo_pose.py",
+        "extract_keypoints.py",
+        "realtime_classify.py",
+        "realtime_classify_debug.py"
+      ]
+    },
+    "server": {
+      "path": "server",
+      "purpose": null,
+      "fileCount": 3,
+      "lastAccessed": 1772725416041,
+      "keyFiles": [
+        "__init__.py",
+        "config.py",
+        "main.py"
+      ]
+    },
+    "src": {
+      "path": "src",
+      "purpose": "Source code",
+      "fileCount": 1,
+      "lastAccessed": 1772725416041,
+      "keyFiles": [
+        "__init__.py"
+      ]
+    },
+    "uploads": {
+      "path": "uploads",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1772725416041,
+      "keyFiles": []
+    },
+    "mobile/assets": {
+      "path": "mobile/assets",
+      "purpose": "Static assets",
+      "fileCount": 4,
+      "lastAccessed": 1772725416041,
+      "keyFiles": [
+        "adaptive-icon.png",
+        "favicon.png",
+        "icon.png"
+      ]
+    },
+    "mobile/node_modules": {
+      "path": "mobile/node_modules",
+      "purpose": "Dependencies",
+      "fileCount": 1,
+      "lastAccessed": 1772725416043,
+      "keyFiles": []
+    },
+    "server/models": {
+      "path": "server/models",
+      "purpose": "Data models",
+      "fileCount": 3,
+      "lastAccessed": 1772725416043,
+      "keyFiles": [
+        "__init__.py",
+        "db.py",
+        "schemas.py"
+      ]
+    },
+    "server/services": {
+      "path": "server/services",
+      "purpose": "Business logic services",
+      "fileCount": 6,
+      "lastAccessed": 1772725416043,
+      "keyFiles": [
+        "__init__.py",
+        "analysis_pipeline.py",
+        "inference_service.py"
+      ]
+    },
+    "src/models": {
+      "path": "src/models",
+      "purpose": "Data models",
+      "fileCount": 2,
+      "lastAccessed": 1772725416043,
+      "keyFiles": [
+        "__init__.py",
+        "lstm.py"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "scripts/realtime_classify.py",
+      "accessCount": 2,
+      "lastAccessed": 1772752784852,
+      "type": "file"
+    },
+    {
+      "path": "scripts/classify_video.py",
+      "accessCount": 2,
+      "lastAccessed": 1772752794025,
+      "type": "file"
+    },
+    {
+      "path": "scripts/train_lstm.py",
+      "accessCount": 1,
+      "lastAccessed": 1772726007172,
+      "type": "file"
+    },
+    {
+      "path": "scripts/annotate_video.py",
+      "accessCount": 1,
+      "lastAccessed": 1772752022459,
+      "type": "file"
+    },
+    {
+      "path": "configs/boxing.yaml",
+      "accessCount": 1,
+      "lastAccessed": 1772752761727,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}

@@ -1,0 +1,10 @@
+Downloading cpython@3.10.16
+Checking checksum
+Unpacking
+Downloaded cpython@3.10.16
+Initializing new virtualenv in /Users/kgw7401/atom/archive/.venv
+Python version: cpython@3.10.16
+Traceback (most recent call last):
+  File "/Users/kgw7401/atom/archive/scripts/train_lstm.py", line 17, in <module>
+    import numpy as np
+ModuleNotFoundError: No module named 'numpy'
