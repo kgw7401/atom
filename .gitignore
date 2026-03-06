@@ -1,0 +1,32 @@
+# Data & large files — local only, not uploaded to GitHub
+archive/data/
+archive/phase1/data/
+archive/*.task
+archive/*.tar.gz
+
+# Videos & raw media
+*.MOV
+*.mov
+*.mp4
+*.avi
+
+# ML model files
+*.task
+*.pkl
+*.h5
+
+# Databases
+*.db
+*.sqlite
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+*.egg-info/
+
+# OS
+.DS_Store
