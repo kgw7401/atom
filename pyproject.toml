@@ -9,6 +9,7 @@ dependencies = [
     "pandas>=2.2",
     "pyarrow>=15.0",
     "yt-dlp>=2024.0",
+    "mediapipe>=0.10.32",
 ]
 
 [project.optional-dependencies]

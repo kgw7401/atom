@@ -10,19 +10,54 @@
 #   universal: false
 
 -e file:.
+absl-py==2.4.0
+    # via mediapipe
+cffi==2.0.0
+    # via sounddevice
+contourpy==1.3.3
+    # via matplotlib
+cycler==0.12.1
+    # via matplotlib
+flatbuffers==25.12.19
+    # via mediapipe
+fonttools==4.61.1
+    # via matplotlib
+kiwisolver==1.4.9
+    # via matplotlib
+matplotlib==3.10.8
+    # via mediapipe
+mediapipe==0.10.32
+    # via atom-track-b
 numpy==2.4.2
     # via atom-track-b
+    # via contourpy
+    # via matplotlib
+    # via mediapipe
+    # via opencv-contrib-python
     # via opencv-python-headless
     # via pandas
+opencv-contrib-python==4.13.0.92
+    # via mediapipe
 opencv-python-headless==4.13.0.92
     # via atom-track-b
+packaging==26.0
+    # via matplotlib
 pandas==3.0.1
     # via atom-track-b
+pillow==12.1.1
+    # via matplotlib
 pyarrow==23.0.1
     # via atom-track-b
+pycparser==3.0
+    # via cffi
+pyparsing==3.3.2
+    # via matplotlib
 python-dateutil==2.9.0.post0
+    # via matplotlib
     # via pandas
 six==1.17.0
     # via python-dateutil
+sounddevice==0.5.5
+    # via mediapipe
 yt-dlp==2026.3.3
     # via atom-track-b
