@@ -12,32 +12,58 @@
 -e file:.
 absl-py==2.4.0
     # via mediapipe
+certifi==2026.2.25
+    # via requests
 cffi==2.0.0
     # via sounddevice
+charset-normalizer==3.4.5
+    # via requests
 contourpy==1.3.3
     # via matplotlib
 cycler==0.12.1
     # via matplotlib
+filelock==3.25.0
+    # via torch
 flatbuffers==25.12.19
     # via mediapipe
 fonttools==4.61.1
     # via matplotlib
+fsspec==2026.2.0
+    # via torch
+idna==3.11
+    # via requests
+jinja2==3.1.6
+    # via torch
 kiwisolver==1.4.9
     # via matplotlib
+markupsafe==3.0.3
+    # via jinja2
 matplotlib==3.10.8
     # via mediapipe
+    # via ultralytics
 mediapipe==0.10.32
     # via atom-track-b
+mpmath==1.3.0
+    # via sympy
+networkx==3.6.1
+    # via torch
 numpy==2.4.2
     # via atom-track-b
     # via contourpy
     # via matplotlib
     # via mediapipe
     # via opencv-contrib-python
+    # via opencv-python
     # via opencv-python-headless
     # via pandas
+    # via scipy
+    # via torchvision
+    # via ultralytics
+    # via ultralytics-thop
 opencv-contrib-python==4.13.0.92
     # via mediapipe
+opencv-python==4.13.0.92
+    # via ultralytics
 opencv-python-headless==4.13.0.92
     # via atom-track-b
 packaging==26.0
@@ -46,6 +72,14 @@ pandas==3.0.1
     # via atom-track-b
 pillow==12.1.1
     # via matplotlib
+    # via torchvision
+    # via ultralytics
+polars==1.38.1
+    # via ultralytics
+polars-runtime-32==1.38.1
+    # via polars
+psutil==7.2.2
+    # via ultralytics
 pyarrow==23.0.1
     # via atom-track-b
 pycparser==3.0
@@ -55,9 +89,33 @@ pyparsing==3.3.2
 python-dateutil==2.9.0.post0
     # via matplotlib
     # via pandas
+pyyaml==6.0.3
+    # via ultralytics
+requests==2.32.5
+    # via ultralytics
+scipy==1.17.1
+    # via ultralytics
+setuptools==82.0.0
+    # via torch
 six==1.17.0
     # via python-dateutil
 sounddevice==0.5.5
     # via mediapipe
+sympy==1.14.0
+    # via torch
+torch==2.10.0
+    # via torchvision
+    # via ultralytics
+    # via ultralytics-thop
+torchvision==0.25.0
+    # via ultralytics
+typing-extensions==4.15.0
+    # via torch
+ultralytics==8.4.21
+    # via atom-track-b
+ultralytics-thop==2.0.18
+    # via ultralytics
+urllib3==2.6.3
+    # via requests
 yt-dlp==2026.3.3
     # via atom-track-b
