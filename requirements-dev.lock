@@ -38,6 +38,8 @@ iniconfig==2.3.0
     # via pytest
 jinja2==3.1.6
     # via torch
+joblib==1.5.3
+    # via scikit-learn
 kiwisolver==1.4.9
     # via matplotlib
 markupsafe==3.0.3
@@ -60,10 +62,12 @@ numpy==2.4.2
     # via opencv-python
     # via opencv-python-headless
     # via pandas
+    # via scikit-learn
     # via scipy
     # via torchvision
     # via ultralytics
     # via ultralytics-thop
+    # via xgboost
 opencv-contrib-python==4.13.0.92
     # via mediapipe
 opencv-python==4.13.0.92
@@ -107,8 +111,12 @@ pyyaml==6.0.3
 requests==2.32.5
     # via ultralytics
 ruff==0.15.5
+scikit-learn==1.8.0
+    # via atom-track-b
 scipy==1.17.1
+    # via scikit-learn
     # via ultralytics
+    # via xgboost
 setuptools==82.0.0
     # via torch
 six==1.17.0
@@ -117,6 +125,8 @@ sounddevice==0.5.5
     # via mediapipe
 sympy==1.14.0
     # via torch
+threadpoolctl==3.6.0
+    # via scikit-learn
 torch==2.10.0
     # via torchvision
     # via ultralytics
@@ -131,5 +141,7 @@ ultralytics-thop==2.0.18
     # via ultralytics
 urllib3==2.6.3
     # via requests
+xgboost==3.2.0
+    # via atom-track-b
 yt-dlp==2026.3.3
     # via atom-track-b
