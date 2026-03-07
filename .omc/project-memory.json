@@ -61,16 +61,40 @@
   },
   "hotPaths": [
     {
+      "path": "specs/atom-track-b-spec.md",
+      "accessCount": 72,
+      "lastAccessed": 1772883990352,
+      "type": "file"
+    },
+    {
       "path": "specs/atom-project.md",
-      "accessCount": 16,
-      "lastAccessed": 1772813715031,
+      "accessCount": 20,
+      "lastAccessed": 1772874574914,
       "type": "file"
     },
     {
       "path": "",
-      "accessCount": 1,
-      "lastAccessed": 1772806717699,
+      "accessCount": 2,
+      "lastAccessed": 1772855579148,
       "type": "directory"
+    },
+    {
+      "path": ".claude/commands/spec.md",
+      "accessCount": 1,
+      "lastAccessed": 1772855578186,
+      "type": "file"
+    },
+    {
+      "path": "archive/phase2/spec/TECHSPEC.md",
+      "accessCount": 1,
+      "lastAccessed": 1772855587502,
+      "type": "file"
+    },
+    {
+      "path": "archive/phase2/spec/PRD.md",
+      "accessCount": 1,
+      "lastAccessed": 1772855588021,
+      "type": "file"
     }
   ],
   "userDirectives": []
