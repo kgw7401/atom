@@ -1,0 +1,77 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1772805982933,
+  "projectRoot": "/Users/kgw7401/atom",
+  "techStack": {
+    "languages": [],
+    "frameworks": [],
+    "packageManager": null,
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": null,
+    "testCommand": null,
+    "lintCommand": null,
+    "devCommand": null,
+    "scripts": {}
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "spec"
+    ],
+    "gitBranches": null
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "archive": {
+      "path": "archive",
+      "purpose": null,
+      "fileCount": 2,
+      "lastAccessed": 1772805982927,
+      "keyFiles": [
+        "atom_backup_ml_20260306.tar.gz",
+        "pose_landmarker_heavy.task"
+      ]
+    },
+    "spec": {
+      "path": "spec",
+      "purpose": "Test specifications",
+      "fileCount": 0,
+      "lastAccessed": 1772805982928,
+      "keyFiles": []
+    },
+    "archive/data": {
+      "path": "archive/data",
+      "purpose": "Data files",
+      "fileCount": 3,
+      "lastAccessed": 1772805982928,
+      "keyFiles": [
+        "IMG_9101.MOV",
+        "labels.txt"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "specs/atom-project.md",
+      "accessCount": 16,
+      "lastAccessed": 1772813715031,
+      "type": "file"
+    },
+    {
+      "path": "",
+      "accessCount": 1,
+      "lastAccessed": 1772806717699,
+      "type": "directory"
+    }
+  ],
+  "userDirectives": []
+}
