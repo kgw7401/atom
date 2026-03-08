@@ -61,16 +61,304 @@
   },
   "hotPaths": [
     {
+      "path": "specs/track-a-spec.md",
+      "accessCount": 25,
+      "lastAccessed": 1772890588810,
+      "type": "file"
+    },
+    {
       "path": "specs/atom-project.md",
-      "accessCount": 16,
-      "lastAccessed": 1772813715031,
+      "accessCount": 19,
+      "lastAccessed": 1772857302408,
+      "type": "file"
+    },
+    {
+      "path": "src/atom/cli/main.py",
+      "accessCount": 17,
+      "lastAccessed": 1772890347351,
+      "type": "file"
+    },
+    {
+      "path": "src/atom/seed.py",
+      "accessCount": 7,
+      "lastAccessed": 1772889805923,
+      "type": "file"
+    },
+    {
+      "path": "src/atom/services/session_service.py",
+      "accessCount": 6,
+      "lastAccessed": 1772896024551,
+      "type": "file"
+    },
+    {
+      "path": "src/atom/models/base.py",
+      "accessCount": 5,
+      "lastAccessed": 1772887748917,
       "type": "file"
     },
     {
       "path": "",
-      "accessCount": 1,
-      "lastAccessed": 1772806717699,
+      "accessCount": 4,
+      "lastAccessed": 1772857298686,
       "type": "directory"
+    },
+    {
+      "path": "archive/phase1/server/models/schemas.py",
+      "accessCount": 4,
+      "lastAccessed": 1772857817771,
+      "type": "file"
+    },
+    {
+      "path": "archive/phase1/server/models/db.py",
+      "accessCount": 4,
+      "lastAccessed": 1772857818174,
+      "type": "file"
+    },
+    {
+      "path": "archive/phase1/src/trainer/drill_engine.py",
+      "accessCount": 4,
+      "lastAccessed": 1772857818753,
+      "type": "file"
+    },
+    {
+      "path": "src/atom/api/schemas.py",
+      "accessCount": 4,
+      "lastAccessed": 1772884387301,
+      "type": "file"
+    },
+    {
+      "path": "src/atom/api/app.py",
+      "accessCount": 4,
+      "lastAccessed": 1772884401398,
+      "type": "file"
+    },
+    {
+      "path": "archive/phase2/spec/TECHSPEC.md",
+      "accessCount": 3,
+      "lastAccessed": 1772857314772,
+      "type": "file"
+    },
+    {
+      "path": "archive/phase2/server/services/session_generator.py",
+      "accessCount": 3,
+      "lastAccessed": 1772857823799,
+      "type": "file"
+    },
+    {
+      "path": "archive/phase2/server/services/llm_service.py",
+      "accessCount": 3,
+      "lastAccessed": 1772857824233,
+      "type": "file"
+    },
+    {
+      "path": "archive/phase2/server/services/feedback_generator.py",
+      "accessCount": 3,
+      "lastAccessed": 1772857824751,
+      "type": "file"
+    },
+    {
+      "path": "archive/phase1/src/trainer/evaluator.py",
+      "accessCount": 3,
+      "lastAccessed": 1772857825144,
+      "type": "file"
+    },
+    {
+      "path": "alembic.ini",
+      "accessCount": 3,
+      "lastAccessed": 1772873930966,
+      "type": "file"
+    },
+    {
+      "path": "pyproject.toml",
+      "accessCount": 3,
+      "lastAccessed": 1772896599622,
+      "type": "file"
+    },
+    {
+      "path": "src/atom/services/llm_client.py",
+      "accessCount": 3,
+      "lastAccessed": 1772896617802,
+      "type": "file"
+    },
+    {
+      "path": "archive/phase2/spec/PRD.md",
+      "accessCount": 2,
+      "lastAccessed": 1772855661772,
+      "type": "file"
+    },
+    {
+      "path": "archive/phase1/server/config.py",
+      "accessCount": 2,
+      "lastAccessed": 1772857307324,
+      "type": "file"
+    },
+    {
+      "path": "archive/phase1/server/main.py",
+      "accessCount": 2,
+      "lastAccessed": 1772857324139,
+      "type": "file"
+    },
+    {
+      "path": "alembic/env.py",
+      "accessCount": 2,
+      "lastAccessed": 1772873941361,
+      "type": "file"
+    },
+    {
+      "path": "src/atom/api/routers/combos.py",
+      "accessCount": 2,
+      "lastAccessed": 1772883066150,
+      "type": "file"
+    },
+    {
+      "path": "src/atom/models/tables.py",
+      "accessCount": 2,
+      "lastAccessed": 1772883240251,
+      "type": "file"
+    },
+    {
+      "path": "archive/phase1/IMPLEMENTATION_STATUS.md",
+      "accessCount": 1,
+      "lastAccessed": 1772855672717,
+      "type": "file"
+    },
+    {
+      "path": "archive/phase2/PHASE1_COMPLETE.md",
+      "accessCount": 1,
+      "lastAccessed": 1772855673544,
+      "type": "file"
+    },
+    {
+      "path": "archive/phase2/ARCHIVE_MIGRATION.md",
+      "accessCount": 1,
+      "lastAccessed": 1772855673819,
+      "type": "file"
+    },
+    {
+      "path": "archive/phase2/pyproject.toml",
+      "accessCount": 1,
+      "lastAccessed": 1772857210213,
+      "type": "file"
+    },
+    {
+      "path": "archive/phase1/server/routers/sessions.py",
+      "accessCount": 1,
+      "lastAccessed": 1772857220105,
+      "type": "file"
+    },
+    {
+      "path": "archive/phase1/server/services/inference_service.py",
+      "accessCount": 1,
+      "lastAccessed": 1772857225395,
+      "type": "file"
+    },
+    {
+      "path": "archive/phase2/tests/pipeline/test_pipeline.py",
+      "accessCount": 1,
+      "lastAccessed": 1772857225618,
+      "type": "file"
+    },
+    {
+      "path": "archive/phase1/server/services/analysis_pipeline.py",
+      "accessCount": 1,
+      "lastAccessed": 1772857225898,
+      "type": "file"
+    },
+    {
+      "path": "archive/phase1/configs/boxing.yaml",
+      "accessCount": 1,
+      "lastAccessed": 1772857309127,
+      "type": "file"
+    },
+    {
+      "path": "archive/phase1/pyproject.toml",
+      "accessCount": 1,
+      "lastAccessed": 1772857309596,
+      "type": "file"
+    },
+    {
+      "path": ".claudeignore",
+      "accessCount": 1,
+      "lastAccessed": 1772857318904,
+      "type": "file"
+    },
+    {
+      "path": "archive/phase2/tests/services/test_mastery_updater.py",
+      "accessCount": 1,
+      "lastAccessed": 1772857324002,
+      "type": "file"
+    },
+    {
+      "path": "CLAUDE.md",
+      "accessCount": 1,
+      "lastAccessed": 1772857817388,
+      "type": "file"
+    },
+    {
+      "path": "src/atom/__init__.py",
+      "accessCount": 1,
+      "lastAccessed": 1772872180189,
+      "type": "file"
+    },
+    {
+      "path": "src/atom/cli/__init__.py",
+      "accessCount": 1,
+      "lastAccessed": 1772872180655,
+      "type": "file"
+    },
+    {
+      "path": "src/atom/models/__init__.py",
+      "accessCount": 1,
+      "lastAccessed": 1772872181124,
+      "type": "file"
+    },
+    {
+      "path": "src/atom/services/__init__.py",
+      "accessCount": 1,
+      "lastAccessed": 1772872181571,
+      "type": "file"
+    },
+    {
+      "path": "src/atom/api/__init__.py",
+      "accessCount": 1,
+      "lastAccessed": 1772872181992,
+      "type": "file"
+    },
+    {
+      "path": "src/atom/api/routers/__init__.py",
+      "accessCount": 1,
+      "lastAccessed": 1772872182489,
+      "type": "file"
+    },
+    {
+      "path": "tests/__init__.py",
+      "accessCount": 1,
+      "lastAccessed": 1772872183110,
+      "type": "file"
+    },
+    {
+      "path": "src/atom/services/combo_service.py",
+      "accessCount": 1,
+      "lastAccessed": 1772881926842,
+      "type": "file"
+    },
+    {
+      "path": "tests/test_combo_service.py",
+      "accessCount": 1,
+      "lastAccessed": 1772881947133,
+      "type": "file"
+    },
+    {
+      "path": "tests/test_combo_api.py",
+      "accessCount": 1,
+      "lastAccessed": 1772882112931,
+      "type": "file"
+    },
+    {
+      "path": "tests/test_session_service.py",
+      "accessCount": 1,
+      "lastAccessed": 1772882756798,
+      "type": "file"
     }
   ],
   "userDirectives": []

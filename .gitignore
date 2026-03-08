@@ -18,6 +18,7 @@ archive/*.tar.gz
 # Databases
 *.db
 *.sqlite
+data/
 
 # Python
 .venv/
