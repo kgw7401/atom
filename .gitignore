@@ -18,6 +18,7 @@ archive/*.tar.gz
 # Databases
 *.db
 *.sqlite
+data/
 
 # Python
 .venv/
@@ -30,3 +31,6 @@ __pycache__/
 
 # OS
 .DS_Store
+
+# Mobile
+mobile/node_modules/

@@ -1,0 +1,120 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1772982263096,
+  "projectRoot": "/Users/kgw7401/atom-a/mobile",
+  "techStack": {
+    "languages": [
+      {
+        "name": "JavaScript/TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "package.json"
+        ]
+      },
+      {
+        "name": "TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "tsconfig.json"
+        ]
+      }
+    ],
+    "frameworks": [
+      {
+        "name": "react",
+        "version": "19.1.0",
+        "category": "frontend"
+      }
+    ],
+    "packageManager": "npm",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": null,
+    "testCommand": null,
+    "lintCommand": null,
+    "devCommand": "npm run start",
+    "scripts": {
+      "start": "expo start",
+      "android": "expo start --android",
+      "ios": "expo start --ios"
+    }
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": "type-based"
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "src"
+    ],
+    "gitBranches": null
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "src": {
+      "path": "src",
+      "purpose": "Source code",
+      "fileCount": 0,
+      "lastAccessed": 1772982263090,
+      "keyFiles": []
+    },
+    "src/api": {
+      "path": "src/api",
+      "purpose": "API routes",
+      "fileCount": 4,
+      "lastAccessed": 1772982263092,
+      "keyFiles": [
+        "client.ts",
+        "profile.ts",
+        "session.ts"
+      ]
+    },
+    "src/components": {
+      "path": "src/components",
+      "purpose": "UI components",
+      "fileCount": 0,
+      "lastAccessed": 1772982263092,
+      "keyFiles": []
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "src/screens/ActiveSessionScreen.tsx",
+      "accessCount": 12,
+      "lastAccessed": 1773149512146,
+      "type": "file"
+    },
+    {
+      "path": "App.tsx",
+      "accessCount": 5,
+      "lastAccessed": 1773149965003,
+      "type": "file"
+    },
+    {
+      "path": "src/api/session.ts",
+      "accessCount": 2,
+      "lastAccessed": 1772982925190,
+      "type": "file"
+    },
+    {
+      "path": "package.json",
+      "accessCount": 2,
+      "lastAccessed": 1773149981757,
+      "type": "file"
+    },
+    {
+      "path": "src/screens/PlanPreviewScreen.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1772982863821,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}
