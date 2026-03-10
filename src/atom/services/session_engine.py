@@ -33,17 +33,22 @@ class SessionEvent:
     combo_display_name: str | None = None
     actions: list[str] | None = None
     reason: str | None = None
+    # Protocol fields (sent to mobile client)
+    extra: dict = field(default_factory=dict)
 
     def to_dict(self) -> dict:
-        d: dict[str, Any] = {"type": self.type, "ts": round(self.ts, 1)}
+        # Map internal type names → WebSocket protocol names
+        protocol_type = "combo_call" if self.type == "combo_called" else self.type
+        d: dict[str, Any] = {"type": protocol_type, "ts": round(self.ts, 1)}
         if self.round is not None:
             d["round"] = self.round
         if self.combo_display_name is not None:
-            d["combo_display_name"] = self.combo_display_name
+            d["name"] = self.combo_display_name  # protocol uses "name"
         if self.actions is not None:
             d["actions"] = self.actions
         if self.reason is not None:
             d["reason"] = self.reason
+        d.update(self.extra)
         return d
 
 
@@ -60,6 +65,7 @@ class SessionEngine:
     tts_enabled: bool = True
     voice: str = "Yuna"
     on_output: Callable[[str], None] | None = None  # terminal output callback
+    on_event: Callable[[dict], None] | None = None  # structured event callback
 
     # Internal state
     state: State = field(default=State.IDLE, init=False)
@@ -80,6 +86,8 @@ class SessionEngine:
 
     def _record(self, event: SessionEvent) -> None:
         self.events.append(event)
+        if self.on_event:
+            self.on_event(event.to_dict())
 
     @staticmethod
     def _actions_to_speech(actions: list[str]) -> str:
@@ -149,8 +157,18 @@ class SessionEngine:
         # Session end
         self.state = State.SESSION_END
         elapsed = self._elapsed()
-        reason = "abandoned" if self._aborted else "completed"
-        self._record(SessionEvent(type="session_end", ts=elapsed, reason=reason))
+        status = "abandoned" if self._aborted else "completed"
+        self._record(SessionEvent(
+            type="session_end",
+            ts=elapsed,
+            reason=status,
+            extra={
+                "status": status,
+                "rounds": self.rounds_completed,
+                "combos": self.combos_delivered,
+                "duration_sec_end": round(elapsed, 1),
+            },
+        ))
 
         if self._aborted:
             self._emit(f"\n  Session aborted. ({self.rounds_completed}/{total_rounds} rounds)")
@@ -171,13 +189,18 @@ class SessionEngine:
         """Execute a single round."""
         round_num = rnd["round_number"]
         duration = rnd["duration_seconds"]
-        rest = rnd["rest_after_seconds"]
+        rest_duration = rnd["rest_after_seconds"]
         instructions = rnd["instructions"]
 
         # Round start
         self.state = State.ROUND_ACTIVE
         round_start_time = self._elapsed()
-        self._record(SessionEvent(type="round_start", ts=round_start_time, round=round_num))
+        self._record(SessionEvent(
+            type="round_start",
+            ts=round_start_time,
+            round=round_num,
+            extra={"total": total_rounds, "duration_sec": duration},
+        ))
 
         self._emit(f"  Round {round_num}/{total_rounds}  ({duration}s)")
         self._emit(f"  {'-'*30}")
@@ -234,9 +257,9 @@ class SessionEngine:
 
             # Wait: time to throw the combo + base rest interval
             throw_time = len(actions) * THROW_TIME_PER_ACTION
-            rest = random.uniform(pmin, pmax) + throw_time
+            interval = random.uniform(pmin, pmax) + throw_time
             try:
-                await asyncio.sleep(rest)
+                await asyncio.sleep(interval)
             except asyncio.CancelledError:
                 self._aborted = True
                 return
@@ -260,14 +283,19 @@ class SessionEngine:
             return
 
         # Rest period (skip after last round)
-        if round_num < total_rounds and rest > 0:
+        if round_num < total_rounds and rest_duration > 0:
             self.state = State.REST_PERIOD
-            self._record(SessionEvent(type="rest_start", ts=self._elapsed(), round=round_num))
-            self._emit(f"  Rest: {rest}s")
+            self._record(SessionEvent(
+                type="rest_start",
+                ts=self._elapsed(),
+                round=round_num,
+                extra={"rest_sec": rest_duration},
+            ))
+            self._emit(f"  Rest: {rest_duration}s")
             self._speak("Rest")
 
             try:
-                await asyncio.sleep(rest)
+                await asyncio.sleep(rest_duration)
             except asyncio.CancelledError:
                 self._aborted = True
                 return

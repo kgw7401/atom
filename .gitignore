@@ -31,3 +31,6 @@ __pycache__/
 
 # OS
 .DS_Store
+
+# Mobile
+mobile/node_modules/

@@ -61,6 +61,7 @@ class PlanDetail(BaseModel):
     focus: str
     total_duration_minutes: int
     rounds: list[RoundResponse]
+    pace_interval_sec: list[int] = Field(default=[3, 5])
 
 
 # Fix forward reference
@@ -86,6 +87,20 @@ class SessionSummary(BaseModel):
 
 class SessionDetail(SessionSummary):
     delivery_log_json: dict
+
+
+# ── Session log schema (client → server after local execution) ────────
+
+class SessionLogRequest(BaseModel):
+    drill_plan_id: str
+    template_name: str
+    started_at: datetime
+    completed_at: datetime
+    total_duration_sec: float
+    rounds_completed: int
+    rounds_total: int
+    combos_delivered: int
+    status: str  # "completed" | "abandoned"
 
 
 # ── Profile schemas ───────────────────────────────────────────────────

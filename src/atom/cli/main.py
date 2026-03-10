@@ -74,6 +74,25 @@ async def _init() -> None:
     click.echo("Atom initialized successfully.")
 
 
+# ── serve ────────────────────────────────────────────────────────────────
+
+@cli.command()
+@click.option("--host", default="0.0.0.0", show_default=True, help="Bind host")
+@click.option("--port", default=8000, show_default=True, help="Bind port")
+@click.option("--reload", is_flag=True, help="Enable auto-reload (dev mode)")
+def serve(host: str, port: int, reload: bool) -> None:
+    """Start the API server (for mobile app and external access)."""
+    try:
+        import uvicorn
+    except ImportError:
+        click.echo("uvicorn not installed. Run: pip install uvicorn", err=True)
+        raise SystemExit(1)
+    click.echo(f"Starting Atom API server at http://{host}:{port}")
+    click.echo("Mobile app: set server URL to your local IP (e.g. http://192.168.x.x:8000)")
+    click.echo("Press Ctrl+C to stop.\n")
+    uvicorn.run("atom.api.app:app", host=host, port=port, reload=reload)
+
+
 # ── voices ───────────────────────────────────────────────────────────────
 
 @cli.command("voices")
