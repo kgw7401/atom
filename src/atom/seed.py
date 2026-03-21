@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from atom.models.tables import SessionTemplate, UserProfile
+from atom.models.tables import AudioChunk, SessionTemplate, UserProfile
+
+CHUNKS_DIR = Path("data/audio/chunks")
 
 
 async def seed_all(session: AsyncSession) -> dict[str, int]:
@@ -13,6 +17,7 @@ async def seed_all(session: AsyncSession) -> dict[str, int]:
     counts = {
         "profile": await _seed_profile(session),
         "templates": await _seed_templates(session),
+        "audio_chunks": await _seed_audio_chunks(session),
     }
     await session.commit()
     return counts
@@ -48,4 +53,38 @@ async def _seed_templates(session: AsyncSession) -> int:
             )
         )
         count += 1
+    return count
+
+
+async def _seed_audio_chunks(session: AsyncSession) -> int:
+    """Scan data/audio/chunks/ and seed AudioChunk rows for any missing files."""
+    if not CHUNKS_DIR.exists():
+        return 0
+
+    result = await session.execute(select(AudioChunk.text, AudioChunk.variant))
+    existing = {(r[0], r[1]) for r in result.all()}
+
+    count = 0
+    for mp3 in sorted(CHUNKS_DIR.glob("*.mp3")):
+        text = mp3.stem  # e.g. "원투" from "원투.mp3"
+        variant = 1
+        if (text, variant) in existing:
+            continue
+
+        duration_ms = 0
+        try:
+            from mutagen.mp3 import MP3
+            audio = MP3(str(mp3))
+            duration_ms = int(audio.info.length * 1000)
+        except Exception:
+            pass
+
+        session.add(AudioChunk(
+            text=text,
+            variant=variant,
+            audio_path=f"chunks/{mp3.name}",
+            duration_ms=duration_ms,
+        ))
+        count += 1
+
     return count

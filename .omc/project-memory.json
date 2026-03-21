@@ -158,14 +158,14 @@
   "hotPaths": [
     {
       "path": "src/atom/services/template_service.py",
-      "accessCount": 29,
-      "lastAccessed": 1774100961838,
+      "accessCount": 31,
+      "lastAccessed": 1774103585593,
       "type": "file"
     },
     {
       "path": "src/atom/services/audio_service.py",
-      "accessCount": 26,
-      "lastAccessed": 1774101607462,
+      "accessCount": 27,
+      "lastAccessed": 1774103347541,
       "type": "file"
     },
     {
@@ -205,15 +205,27 @@
       "type": "directory"
     },
     {
+      "path": "pyproject.toml",
+      "accessCount": 11,
+      "lastAccessed": 1774103535179,
+      "type": "file"
+    },
+    {
       "path": "src/atom/services/session_service.py",
-      "accessCount": 9,
-      "lastAccessed": 1774101599647,
+      "accessCount": 10,
+      "lastAccessed": 1774103380306,
       "type": "file"
     },
     {
       "path": "mobile/src/api/session.ts",
       "accessCount": 9,
       "lastAccessed": 1774101603304,
+      "type": "file"
+    },
+    {
+      "path": "src/atom/services/tts_service.py",
+      "accessCount": 9,
+      "lastAccessed": 1774103347349,
       "type": "file"
     },
     {
@@ -229,21 +241,15 @@
       "type": "directory"
     },
     {
-      "path": "src/atom/services/tts_service.py",
-      "accessCount": 8,
-      "lastAccessed": 1774101594137,
-      "type": "file"
-    },
-    {
-      "path": "pyproject.toml",
-      "accessCount": 8,
-      "lastAccessed": 1774102131789,
-      "type": "file"
-    },
-    {
       "path": "src/atom/api/schemas.py",
-      "accessCount": 7,
-      "lastAccessed": 1774100810729,
+      "accessCount": 8,
+      "lastAccessed": 1774103370440,
+      "type": "file"
+    },
+    {
+      "path": "src/atom/seed.py",
+      "accessCount": 8,
+      "lastAccessed": 1774103524386,
       "type": "file"
     },
     {
@@ -253,27 +259,21 @@
       "type": "file"
     },
     {
-      "path": "alembic/versions/f74ee7deae92_initial_schema.py",
-      "accessCount": 5,
-      "lastAccessed": 1774067190529,
+      "path": "src/atom/api/app.py",
+      "accessCount": 7,
+      "lastAccessed": 1774103369747,
       "type": "file"
     },
     {
       "path": "src/atom/api/routers/sessions.py",
-      "accessCount": 5,
-      "lastAccessed": 1774101595941,
+      "accessCount": 6,
+      "lastAccessed": 1774103370166,
       "type": "file"
     },
     {
-      "path": "src/atom/api/app.py",
+      "path": "alembic/versions/f74ee7deae92_initial_schema.py",
       "accessCount": 5,
-      "lastAccessed": 1774101791972,
-      "type": "file"
-    },
-    {
-      "path": "src/atom/seed.py",
-      "accessCount": 4,
-      "lastAccessed": 1774066991436,
+      "lastAccessed": 1774067190529,
       "type": "file"
     },
     {
@@ -281,6 +281,12 @@
       "accessCount": 4,
       "lastAccessed": 1774099977244,
       "type": "directory"
+    },
+    {
+      "path": "Dockerfile",
+      "accessCount": 4,
+      "lastAccessed": 1774103482102,
+      "type": "file"
     },
     {
       "path": "mobile/src/api/client.ts",
@@ -295,21 +301,39 @@
       "type": "file"
     },
     {
+      "path": "mobile/package.json",
+      "accessCount": 3,
+      "lastAccessed": 1774102449202,
+      "type": "file"
+    },
+    {
+      "path": "mobile/src/store/settingsStore.ts",
+      "accessCount": 3,
+      "lastAccessed": 1774102797200,
+      "type": "file"
+    },
+    {
       "path": "src/atom",
       "accessCount": 2,
       "lastAccessed": 1774100942584,
       "type": "directory"
     },
     {
-      "path": "mobile/src/store/settingsStore.ts",
-      "accessCount": 2,
-      "lastAccessed": 1774101792612,
-      "type": "file"
-    },
-    {
       "path": "alembic.ini",
       "accessCount": 2,
       "lastAccessed": 1774101800325,
+      "type": "file"
+    },
+    {
+      "path": "mobile/app.json",
+      "accessCount": 2,
+      "lastAccessed": 1774102424383,
+      "type": "file"
+    },
+    {
+      "path": "render.yaml",
+      "accessCount": 2,
+      "lastAccessed": 1774103360627,
       "type": "file"
     },
     {
@@ -367,12 +391,6 @@
       "type": "file"
     },
     {
-      "path": "mobile/package.json",
-      "accessCount": 1,
-      "lastAccessed": 1774101586372,
-      "type": "file"
-    },
-    {
       "path": "src/atom/services/llm_client.py",
       "accessCount": 1,
       "lastAccessed": 1774101593533,
@@ -385,21 +403,9 @@
       "type": "file"
     },
     {
-      "path": "mobile/app.json",
-      "accessCount": 1,
-      "lastAccessed": 1774101599504,
-      "type": "file"
-    },
-    {
       "path": ".env",
       "accessCount": 1,
       "lastAccessed": 1774101607186,
-      "type": "file"
-    },
-    {
-      "path": "Dockerfile",
-      "accessCount": 1,
-      "lastAccessed": 1774102138828,
       "type": "file"
     },
     {
@@ -409,9 +415,9 @@
       "type": "file"
     },
     {
-      "path": "render.yaml",
+      "path": "mobile/eas.json",
       "accessCount": 1,
-      "lastAccessed": 1774102143583,
+      "lastAccessed": 1774102447629,
       "type": "file"
     }
   ],

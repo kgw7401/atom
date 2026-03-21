@@ -15,8 +15,9 @@ RUN pip install --no-cache-dir .
 COPY alembic/ alembic/
 COPY alembic.ini .
 
-# Pre-create data directories
+# Pre-create data directories and copy pre-generated audio chunks
 RUN mkdir -p data/audio/chunks data/audio/rounds data/audio/samples
+COPY data/audio/chunks/ data/audio/chunks/
 
 ENV PYTHONUNBUFFERED=1
 ENV ATOM_DATABASE_URL=sqlite+aiosqlite:///data/atom.db

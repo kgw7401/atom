@@ -21,6 +21,7 @@ dependencies = [
     "elevenlabs>=1.0.0",
     "pydub>=0.25.1",
     "edge-tts>=6.1.0",
+    "mutagen>=1.47.0",
     "python-dotenv>=1.0.0",
 ]
 
