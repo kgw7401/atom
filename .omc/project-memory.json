@@ -289,6 +289,12 @@
       "type": "directory"
     },
     {
+      "path": ".dockerignore",
+      "accessCount": 4,
+      "lastAccessed": 1774103814405,
+      "type": "file"
+    },
+    {
       "path": "mobile/src/api/client.ts",
       "accessCount": 3,
       "lastAccessed": 1774101792236,
@@ -334,12 +340,6 @@
       "path": "render.yaml",
       "accessCount": 2,
       "lastAccessed": 1774103360627,
-      "type": "file"
-    },
-    {
-      "path": ".dockerignore",
-      "accessCount": 2,
-      "lastAccessed": 1774103718207,
       "type": "file"
     },
     {

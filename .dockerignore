@@ -25,9 +25,11 @@ archive/
 specs/
 *.md
 
-# Local data (regenerated on startup)
-data/
-!data/audio/chunks/
+# Local data (regenerated on startup — keep audio chunks for Docker)
+data/*
+!data/audio
+data/audio/*
+!data/audio/chunks
 
 # OMC / Claude
 .omc/
