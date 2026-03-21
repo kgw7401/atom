@@ -48,6 +48,11 @@ AUDIO_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/audio", StaticFiles(directory=str(AUDIO_DIR)), name="audio")
 
 
+@app.get("/")
+async def root():
+    return {"name": "Atom", "version": "0.3.0", "status": "running"}
+
+
 @app.get("/health")
 async def health():
     return {"status": "ok"}
