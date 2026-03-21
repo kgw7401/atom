@@ -18,9 +18,17 @@ export interface Segment {
   chunks: Chunk[];
 }
 
+export interface Timestamp {
+  start_ms: number;
+  end_ms: number;
+  text: string;
+}
+
 export interface Round {
   round: number;
   segments: Segment[];
+  audio_url?: string;
+  timestamps?: Timestamp[];
 }
 
 export interface PlanDetail {

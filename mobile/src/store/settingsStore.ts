@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 
 const STORAGE_KEY = 'atom_server_url';
-const DEFAULT_URL = 'http://localhost:8000';
+const DEFAULT_URL = 'http://localhost:8321';
 
 interface SettingsState {
   serverUrl: string;

@@ -26,9 +26,17 @@ class SegmentResponse(BaseModel):
     chunks: list[ChunkResponse]
 
 
+class TimestampResponse(BaseModel):
+    start_ms: int
+    end_ms: int
+    text: str
+
+
 class RoundResponse(BaseModel):
     round: int
     segments: list[SegmentResponse]
+    audio_url: str = ""
+    timestamps: list[TimestampResponse] = []
 
 
 class PlanDetail(BaseModel):

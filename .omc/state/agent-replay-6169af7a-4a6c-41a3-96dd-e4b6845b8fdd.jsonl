@@ -1,0 +1,10 @@
+{"t":0,"agent":"a758201","agent_type":"Explore","event":"agent_start","parent_mode":"none"}
+{"t":0,"agent":"a758201","agent_type":"Explore","event":"agent_stop","success":true,"duration_ms":51061}
+{"t":0,"agent":"a287812","agent_type":"analyst","event":"agent_start","parent_mode":"none"}
+{"t":0,"agent":"a287812","agent_type":"analyst","event":"agent_stop","success":true,"duration_ms":722006}
+{"t":0,"agent":"ac802b2","agent_type":"unknown","event":"agent_stop","success":true}
+{"t":0,"agent":"a3fbccf","agent_type":"unknown","event":"agent_stop","success":true}
+{"t":0,"agent":"a6fed98","agent_type":"Explore","event":"agent_start","parent_mode":"none"}
+{"t":0,"agent":"a6fed98","agent_type":"Explore","event":"agent_stop","success":true,"duration_ms":19724}
+{"t":0,"agent":"a6e6759","agent_type":"Plan","event":"agent_start","parent_mode":"none"}
+{"t":0,"agent":"a6e6759","agent_type":"Plan","event":"agent_stop","success":true,"duration_ms":124871}

@@ -1,10 +1,8 @@
-"""AudioService — manage audio chunks for combo assembly."""
+"""AudioService — generate and manage combo/cue audio via edge-tts."""
 
 from __future__ import annotations
 
 import json
-import shutil
-from collections import Counter
 from pathlib import Path
 
 from sqlalchemy import select
@@ -13,7 +11,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from atom.models.tables import AudioChunk
 
 _DICT_PATH = Path(__file__).parent.parent / "data" / "combo_dictionary.json"
-_CHUNKS_DIR = Path(__file__).parent.parent.parent.parent / "data" / "audio" / "chunks"
+_AUDIO_DIR = Path(__file__).parent.parent.parent.parent / "data" / "audio"
+
+# ── edge-tts voice settings ──────────────────────────────────────────────
+
+EDGE_VOICE = "ko-KR-InJoonNeural"
+EDGE_SETTINGS = {"rate": "+15%", "pitch": "+30Hz", "volume": "+50%"}
 
 
 def _load_dict() -> dict:
@@ -21,86 +24,86 @@ def _load_dict() -> dict:
         return json.load(f)
 
 
-def generate_checklist() -> list[dict]:
-    """Analyze combo dictionary and return recording checklist.
+def get_all_texts() -> dict:
+    """Get all unique combo calls and cues from the dictionary.
 
-    Returns list of {text, reuse_count, suggested_takes} sorted by reuse count.
+    Returns {combos: list[str], cues: list[str], total: int}.
     """
     data = _load_dict()
-    assembly = {
-        k: v for k, v in data.get("combo_assembly", {}).items()
-        if not k.startswith("_")
-    }
-
-    # Count how many combos use each chunk
-    chunk_usage: Counter[str] = Counter()
-    for chunk_list in assembly.values():
-        for chunk_text in chunk_list:
-            chunk_usage[chunk_text] += 1
-
-    # All unique chunks from definition
-    all_chunks = (
-        data["chunks"]["strike_atoms"]
-        + data["chunks"]["strike_phrases"]
-        + data["chunks"]["defense"]
-    )
-
-    checklist = []
-    for text in all_chunks:
-        count = chunk_usage.get(text, 0)
-        takes = 3 if count >= 6 else 2 if count >= 4 else 1
-        checklist.append({
-            "text": text,
-            "reuse_count": count,
-            "suggested_takes": takes,
-        })
-
-    # Add cues
-    for cue in data.get("cues", []):
-        checklist.append({
-            "text": cue["call"],
-            "reuse_count": 0,
-            "suggested_takes": 1,
-        })
-
-    # Add round intros
-    for r in range(1, 13):
-        checklist.append({
-            "text": f"{r}라운드 시작합니다",
-            "reuse_count": 0,
-            "suggested_takes": 1,
-        })
-
-    # Sort: most-reused chunks first
-    checklist.sort(key=lambda x: -x["reuse_count"])
-    return checklist
+    combos = []
+    for level in ["basic", "intermediate", "advanced"]:
+        for c in data["combos"][level]:
+            combos.append(c["call"])
+    cues = [c["call"] for c in data["cues"]]
+    return {"combos": combos, "cues": cues, "total": len(combos) + len(cues)}
 
 
-async def import_chunks(directory: Path, session: AsyncSession) -> dict:
+async def generate_tts(
+    texts: list[str],
+    output_dir: Path,
+    voice: str | None = None,
+    rate: str | None = None,
+    pitch: str | None = None,
+    volume: str | None = None,
+) -> dict:
+    """Generate TTS audio for texts using edge-tts.
+
+    Args:
+        texts: List of texts to generate.
+        output_dir: Directory to save MP3 files.
+        voice: edge-tts voice name (default: ko-KR-InJoonNeural).
+        rate/pitch/volume: Override default settings.
+
+    Returns:
+        {generated: int, skipped: int, errors: list[str]}
+    """
+    import edge_tts
+
+    v = voice or EDGE_VOICE
+    r = rate or EDGE_SETTINGS["rate"]
+    p = pitch or EDGE_SETTINGS["pitch"]
+    vol = volume or EDGE_SETTINGS["volume"]
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    generated = 0
+    skipped = 0
+    errors: list[str] = []
+
+    for text in texts:
+        out_path = output_dir / f"{text}.mp3"
+        if out_path.exists():
+            skipped += 1
+            continue
+
+        try:
+            comm = edge_tts.Communicate(text, v, rate=r, pitch=p, volume=vol)
+            await comm.save(str(out_path))
+            size_kb = out_path.stat().st_size / 1024
+            generated += 1
+            print(f"  {text} → {out_path.name} ({size_kb:.1f} KB)")
+        except Exception as e:
+            errors.append(f"{text}: {e}")
+            print(f"  [ERROR] {text}: {e}")
+
+    return {"generated": generated, "skipped": skipped, "errors": errors}
+
+
+async def import_audio(directory: Path, session: AsyncSession) -> dict:
     """Import audio files from a directory into AudioChunk table.
 
-    Expected filename format: {text}_{variant}.mp3  (e.g. 원투_1.mp3)
-    Or: {text}.mp3 (variant defaults to 1)
+    Expected filename: {text}.mp3
 
     Returns {imported, skipped, errors}.
     """
-    _CHUNKS_DIR.mkdir(parents=True, exist_ok=True)
-
     imported = 0
     skipped = 0
     errors: list[str] = []
 
     for audio_file in sorted(directory.glob("*.mp3")):
-        stem = audio_file.stem
-        # Parse filename: text_variant or just text
-        if "_" in stem and stem.rsplit("_", 1)[1].isdigit():
-            text, variant_str = stem.rsplit("_", 1)
-            variant = int(variant_str)
-        else:
-            text = stem
-            variant = 1
+        text = audio_file.stem
+        variant = 1
 
-        # Check if already exists
         result = await session.execute(
             select(AudioChunk).where(
                 AudioChunk.text == text,
@@ -111,19 +114,10 @@ async def import_chunks(directory: Path, session: AsyncSession) -> dict:
             skipped += 1
             continue
 
-        # Copy to chunks directory
-        dest = _CHUNKS_DIR / audio_file.name
-        try:
-            shutil.copy2(audio_file, dest)
-        except Exception as e:
-            errors.append(f"{audio_file.name}: {e}")
-            continue
-
-        # Get duration (basic: use mutagen if available, else 0)
         duration_ms = 0
         try:
             from mutagen.mp3 import MP3
-            audio = MP3(str(dest))
+            audio = MP3(str(audio_file))
             duration_ms = int(audio.info.length * 1000)
         except Exception:
             pass
@@ -143,29 +137,21 @@ async def import_chunks(directory: Path, session: AsyncSession) -> dict:
     return {"imported": imported, "skipped": skipped, "errors": errors}
 
 
-async def validate_chunks(session: AsyncSession) -> dict:
-    """Verify every combo can be assembled from available AudioChunks.
+async def validate_audio(session: AsyncSession) -> dict:
+    """Verify every combo + cue has an audio file.
 
-    Returns {total_combos, covered, missing: [{combo, missing_chunks}]}.
+    Returns {total, covered, missing: list[str]}.
     """
-    data = _load_dict()
-    assembly = {
-        k: v for k, v in data.get("combo_assembly", {}).items()
-        if not k.startswith("_")
-    }
+    texts_info = get_all_texts()
+    all_texts = texts_info["combos"] + texts_info["cues"]
 
-    # Get all available chunk texts
     result = await session.execute(select(AudioChunk.text).distinct())
     available = {r[0] for r in result.all()}
 
-    missing_combos = []
-    for combo_text, chunk_texts in assembly.items():
-        missing = [ct for ct in chunk_texts if ct not in available]
-        if missing:
-            missing_combos.append({"combo": combo_text, "missing_chunks": missing})
+    missing = [t for t in all_texts if t not in available]
 
     return {
-        "total_combos": len(assembly),
-        "covered": len(assembly) - len(missing_combos),
-        "missing": missing_combos,
+        "total": len(all_texts),
+        "covered": len(all_texts) - len(missing),
+        "missing": missing,
     }

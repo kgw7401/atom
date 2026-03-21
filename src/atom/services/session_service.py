@@ -28,7 +28,7 @@ class SessionService:
         # 2. Shuffle segments, resolve audio chunks
         plan = await template_svc.build_round_plan(template, rounds, round_duration_sec)
 
-        # 3. Save to DrillPlan
+        # 3. Save to DrillPlan (need ID before audio assembly)
         db_plan = DrillPlan(
             template_id=template.id,
             session_config_json={
@@ -43,12 +43,17 @@ class SessionService:
         await self.session.commit()
         await self.session.refresh(db_plan)
 
-        # 4. Check if any audio chunks are available
+        # 4. Assemble per-round audio (concatenate chunk MP3s)
+        plan = await template_svc.assemble_round_audio(plan, db_plan.id)
+
+        # Save enriched plan back
+        db_plan.plan_json = plan
+        await self.session.commit()
+
+        # 5. Check audio readiness by presence of audio_url
         audio_ready = any(
-            chunk["clip_url"]
+            round_data.get("audio_url")
             for round_data in plan["rounds"]
-            for seg in round_data["segments"]
-            for chunk in seg["chunks"]
         )
 
         return {

@@ -1,88 +1,154 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
-  TextInput,
   ScrollView,
   StyleSheet,
   ActivityIndicator,
   Alert,
 } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { fetchTemplates, Template } from '../api/templates';
 import { generatePlan } from '../api/session';
+import { COLORS, SPACING } from '../theme';
 
-type Props = {
-  navigation: NativeStackNavigationProp<any>;
-};
+type Props = { navigation: NativeStackNavigationProp<any> };
 
-const TEMPLATE_LABELS: Record<string, string> = {
-  fundamentals: '기본기',
-  combos: '콤비네이션',
-  mixed: '종합',
-};
+const LEVEL_OPTIONS = [
+  { label: '초급', value: 'beginner' as const },
+  { label: '중급', value: 'intermediate' as const },
+  { label: '고급', value: 'advanced' as const },
+];
+const ROUND_OPTIONS = [1, 2, 3, 4, 5, 6];
+const DURATION_OPTIONS = [
+  { label: '1분', value: 60 },
+  { label: '2분', value: 120 },
+  { label: '3분', value: 180 },
+];
+const REST_OPTIONS = [
+  { label: '15초', value: 15 },
+  { label: '30초', value: 30 },
+  { label: '45초', value: 45 },
+  { label: '60초', value: 60 },
+];
 
 export default function SessionSetupScreen({ navigation }: Props) {
-  const [templates, setTemplates] = useState<Template[]>([]);
-  const [selected, setSelected] = useState<string>('fundamentals');
-  const [prompt, setPrompt] = useState('');
+  const [level, setLevel] = useState<'beginner' | 'intermediate' | 'advanced'>('beginner');
+  const [rounds, setRounds] = useState(3);
+  const [roundDuration, setRoundDuration] = useState(180);
+  const [restDuration, setRestDuration] = useState(30);
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    fetchTemplates()
-      .then(setTemplates)
-      .catch(() => Alert.alert('Error', 'Cannot connect to server. Check Settings.'));
-  }, []);
 
   const handleGenerate = async () => {
     setLoading(true);
     try {
-      const result = await generatePlan({ template: selected, prompt: prompt || undefined });
+      const result = await generatePlan({
+        level,
+        rounds,
+        round_duration_sec: roundDuration,
+        rest_sec: restDuration,
+      });
       navigation.navigate('PlanPreview', { result });
     } catch (e: any) {
-      Alert.alert('Error', e.message);
+      Alert.alert('오류', e.message ?? '플랜 생성에 실패했습니다.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.sectionLabel}>템플릿 선택</Text>
-      {(['fundamentals', 'combos', 'mixed'] as const).map((name) => {
-        const t = templates.find((x) => x.name === name);
-        return (
-          <TouchableOpacity
-            key={name}
-            style={[styles.templateCard, selected === name && styles.templateSelected]}
-            onPress={() => setSelected(name)}
-          >
-            <Text style={styles.templateName}>{TEMPLATE_LABELS[name]}</Text>
-            {t && <Text style={styles.templateDesc}>{t.description}</Text>}
-          </TouchableOpacity>
-        );
-      })}
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      keyboardShouldPersistTaps="handled"
+    >
+      {/* Rounds */}
+      <View style={styles.section}>
+        <Text style={styles.label}>라운드 수</Text>
+        <View style={styles.chips}>
+          {ROUND_OPTIONS.map((r) => (
+            <TouchableOpacity
+              key={r}
+              style={[styles.chip, rounds === r && styles.chipActive]}
+              onPress={() => setRounds(r)}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.chipText, rounds === r && styles.chipTextActive]}>
+                {r}R
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
 
-      <Text style={[styles.sectionLabel, { marginTop: 32 }]}>요청사항 (선택)</Text>
-      <TextInput
-        style={styles.promptInput}
-        value={prompt}
-        onChangeText={setPrompt}
-        placeholder="예: 잽 크로스 위주로, 바디샷 많이"
-        placeholderTextColor="#555"
-        multiline
-      />
+      {/* Round duration */}
+      <View style={styles.section}>
+        <Text style={styles.label}>라운드 시간</Text>
+        <View style={styles.chips}>
+          {DURATION_OPTIONS.map((d) => (
+            <TouchableOpacity
+              key={d.value}
+              style={[styles.chip, roundDuration === d.value && styles.chipActive]}
+              onPress={() => setRoundDuration(d.value)}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.chipText, roundDuration === d.value && styles.chipTextActive]}>
+                {d.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
 
+      {/* Rest duration */}
+      <View style={styles.section}>
+        <Text style={styles.label}>휴식 시간</Text>
+        <View style={styles.chips}>
+          {REST_OPTIONS.map((r) => (
+            <TouchableOpacity
+              key={r.value}
+              style={[styles.chip, restDuration === r.value && styles.chipActive]}
+              onPress={() => setRestDuration(r.value)}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.chipText, restDuration === r.value && styles.chipTextActive]}>
+                {r.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
+      {/* Level */}
+      <View style={styles.section}>
+        <Text style={styles.label}>난이도</Text>
+        <View style={styles.chips}>
+          {LEVEL_OPTIONS.map((l) => (
+            <TouchableOpacity
+              key={l.value}
+              style={[styles.chip, level === l.value && styles.chipActive]}
+              onPress={() => setLevel(l.value)}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.chipText, level === l.value && styles.chipTextActive]}>
+                {l.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
+      {/* Generate button */}
       <TouchableOpacity
-        style={[styles.button, loading && styles.buttonDisabled]}
+        style={[styles.generateBtn, loading && styles.generateBtnDisabled]}
         onPress={handleGenerate}
         disabled={loading}
+        activeOpacity={0.85}
       >
         {loading ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={styles.buttonText}>플랜 생성</Text>
+          <Text style={styles.generateBtnText}>세션 생성</Text>
         )}
       </TouchableOpacity>
     </ScrollView>
@@ -90,38 +156,53 @@ export default function SessionSetupScreen({ navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0a0a0a' },
-  content: { padding: 24, paddingBottom: 48 },
-  sectionLabel: { color: '#888', fontSize: 13, marginBottom: 12, textTransform: 'uppercase', letterSpacing: 1 },
-  templateCard: {
-    backgroundColor: '#1a1a1a',
-    borderRadius: 10,
-    padding: 16,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#222',
+  container: { flex: 1, backgroundColor: COLORS.BG },
+  content: { padding: SPACING.PADDING_SCREEN, paddingBottom: 48 },
+
+  section: { marginBottom: 28 },
+  label: {
+    color: COLORS.TEXT_2,
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    marginBottom: 12,
   },
-  templateSelected: { borderColor: '#e63946', backgroundColor: '#1f0a0c' },
-  templateName: { color: '#fff', fontSize: 17, fontWeight: '600', marginBottom: 4 },
-  templateDesc: { color: '#888', fontSize: 13 },
-  promptInput: {
-    backgroundColor: '#1a1a1a',
-    color: '#fff',
-    borderRadius: 8,
-    padding: 14,
+
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  chip: {
+    borderWidth: 1,
+    borderColor: COLORS.BORDER,
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+  },
+  chipActive: {
+    backgroundColor: COLORS.RED,
+    borderColor: COLORS.RED,
+  },
+  chipText: {
+    color: COLORS.TEXT_2,
     fontSize: 15,
-    borderWidth: 1,
-    borderColor: '#333',
-    minHeight: 80,
-    textAlignVertical: 'top',
-    marginBottom: 24,
+    fontWeight: '600',
   },
-  button: {
-    backgroundColor: '#e63946',
-    borderRadius: 10,
-    padding: 18,
+  chipTextActive: {
+    color: '#fff',
+  },
+
+  generateBtn: {
+    backgroundColor: COLORS.RED,
+    borderRadius: 14,
+    paddingVertical: 18,
     alignItems: 'center',
+    marginTop: 8,
   },
-  buttonDisabled: { opacity: 0.6 },
-  buttonText: { color: '#fff', fontSize: 17, fontWeight: '700' },
+  generateBtnDisabled: {
+    opacity: 0.5,
+  },
+  generateBtnText: {
+    color: '#fff',
+    fontSize: 17,
+    fontWeight: '700',
+  },
 });

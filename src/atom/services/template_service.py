@@ -1,15 +1,21 @@
-"""TemplateService — pick a template, shuffle segments, resolve audio chunks."""
+"""TemplateService — pick a template, build randomized round plans."""
 
 from __future__ import annotations
 
+import asyncio
+import io
 import json
 import random
 from pathlib import Path
 
+from pydub import AudioSegment
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from atom.models.tables import AudioChunk, DrillPlan, SessionTemplate
+from atom.seed_templates import CUES
+
+AUDIO_DIR = Path("data/audio")
 
 _DICT_PATH = Path(__file__).parent.parent / "data" / "combo_dictionary.json"
 _assembly_cache: dict | None = None
@@ -26,6 +32,39 @@ def _load_assembly() -> dict:
             if not k.startswith("_")
         }
     return _assembly_cache
+
+
+def _place_cues(combos: list[str], cues: list[str]) -> list[str]:
+    """Insert cues into combo sequence.
+
+    Rules:
+    - Cue never at position 0 (first) or last position
+    - No two cues adjacent
+    """
+    result = list(combos)
+    if not cues or len(result) < 2:
+        return result
+
+    # Even spacing across interior positions
+    n = len(cues)
+    step = (len(result) - 1) / (n + 1)
+    positions = [max(1, min(round(step * (i + 1)), len(result) - 1)) for i in range(n)]
+
+    # Deduplicate (shift right on collision)
+    used: set[int] = set()
+    final_pos: list[int] = []
+    for p in positions:
+        while p in used:
+            p += 1
+        used.add(p)
+        final_pos.append(p)
+
+    # Insert back-to-front to preserve indices
+    for pos, cue in sorted(zip(final_pos, cues), reverse=True):
+        if pos <= len(result):
+            result.insert(pos, cue)
+
+    return result
 
 
 class TemplateService:
@@ -66,39 +105,32 @@ class TemplateService:
         rounds: int,
         round_duration_sec: int,
     ) -> dict:
-        """Shuffle segments per round, resolve audio chunks.
+        """Build round plan with weighted sampling and cue placement.
 
-        - intro/outro are pinned (not shuffled)
-        - segments are shuffled and scaled to round duration
-        - Round number injected into intro text
+        - Combos sampled from combo_pool using weights
+        - Cues inserted via _place_cues (never first/last, never consecutive)
+        - Audio chunks resolved per segment
         """
         assembly = _load_assembly()
 
-        intro_texts = template.segments_json.get("intro", [])
-        segment_texts = template.segments_json.get("segments", [])
-        outro_texts = template.segments_json.get("outro", [])
+        pool = template.segments_json["combo_pool"]
+        cue_ratio = template.segments_json.get("cue_ratio", 0.10)
 
-        # Scale segment count to round duration (~3.5s per segment avg)
-        est_sec_per_seg = 3.5
-        target_count = max(5, round(round_duration_sec / est_sec_per_seg))
-        target_count = min(target_count, len(segment_texts))
+        combo_calls = [item["call"] for item in pool]
+        combo_weights = [item["weight"] for item in pool]
+
+        total_target = max(5, round(round_duration_sec / 3.5))
+        n_cues = max(1, round(total_target * cue_ratio))
+        n_combos = total_target - n_cues
 
         rounds_list = []
         for r in range(1, rounds + 1):
-            shuffled = list(segment_texts)
-            random.shuffle(shuffled)
-            selected = shuffled[:target_count]
+            selected_combos = random.choices(combo_calls, weights=combo_weights, k=n_combos)
+            selected_cues = random.choices(CUES, k=n_cues)
+            sequence = _place_cues(selected_combos, selected_cues)
 
-            # Inject round number into intro
-            round_intro = [
-                t.replace("시작합니다", f"{r}라운드 시작합니다")
-                for t in intro_texts
-            ]
-            all_texts = round_intro + selected + outro_texts
-
-            # Resolve audio chunks per segment
             round_segments = []
-            for text in all_texts:
+            for text in sequence:
                 chunks = await self._resolve_chunks(text, assembly)
                 round_segments.append({"text": text, "chunks": chunks})
 
@@ -107,29 +139,99 @@ class TemplateService:
         return {"rounds": rounds_list}
 
     async def _resolve_chunks(self, text: str, assembly: dict) -> list[dict]:
-        """Resolve a segment text into audio chunks."""
-        chunk_texts = assembly.get(text)
-        if not chunk_texts:
-            # Cues, intro, outro — the text itself is one chunk
-            chunk_texts = [text]
+        """Resolve a segment text into a single audio clip.
 
-        chunks = []
-        for ct in chunk_texts:
-            result = await self.session.execute(
-                select(AudioChunk).where(AudioChunk.text == ct)
+        Full combo audio is generated as one file per combo/cue,
+        so we look up the segment text directly in AudioChunk.
+        """
+        result = await self.session.execute(
+            select(AudioChunk).where(AudioChunk.text == text)
+        )
+        available = list(result.scalars().all())
+        if available:
+            chosen = random.choice(available)
+            return [{
+                "text": text,
+                "clip_url": f"/audio/{chosen.audio_path}",
+                "duration_ms": chosen.duration_ms,
+            }]
+        return [{
+            "text": text,
+            "clip_url": "",
+            "duration_ms": 0,
+        }]
+
+    async def assemble_round_audio(
+        self, plan: dict, plan_id: str, pause_ms: int = 1500,
+    ) -> dict:
+        """Concatenate segment MP3s into one continuous MP3 per round.
+
+        Returns enriched plan with `audio_url` and `timestamps` per round.
+        """
+        plan_dir = AUDIO_DIR / plan_id
+        plan_dir.mkdir(parents=True, exist_ok=True)
+
+        enriched_rounds = []
+        for rnd in plan["rounds"]:
+            round_num = rnd["round"]
+            segments = rnd["segments"]
+
+            final_audio = AudioSegment.empty()
+            timestamps: list[dict] = []
+            cursor_ms = 0
+
+            for i, seg in enumerate(segments):
+                # Find the first chunk with a clip_url
+                clip_url = ""
+                for chunk in seg.get("chunks", []):
+                    if chunk.get("clip_url"):
+                        clip_url = chunk["clip_url"]
+                        break
+
+                if not clip_url:
+                    # No audio file — skip this segment in the assembled audio
+                    continue
+
+                # clip_url is e.g. "/audio/chunks/원투_1.mp3" → "data/audio/chunks/원투_1.mp3"
+                file_path = AUDIO_DIR / clip_url.removeprefix("/audio/")
+                if not file_path.exists():
+                    continue
+
+                seg_audio = await asyncio.to_thread(
+                    AudioSegment.from_mp3, str(file_path),
+                )
+
+                timestamps.append({
+                    "start_ms": cursor_ms,
+                    "end_ms": cursor_ms + len(seg_audio),
+                    "text": seg["text"],
+                })
+
+                final_audio += seg_audio
+                cursor_ms += len(seg_audio)
+
+                # Add silence between segments (not after last)
+                if i < len(segments) - 1:
+                    final_audio += AudioSegment.silent(duration=pause_ms)
+                    cursor_ms += pause_ms
+
+            if len(final_audio) == 0:
+                enriched_rounds.append(rnd)
+                continue
+
+            # Export per-round MP3
+            round_path = plan_dir / f"round_{round_num}.mp3"
+            buf = io.BytesIO()
+            await asyncio.to_thread(
+                final_audio.export, buf, format="mp3", bitrate="128k",
             )
-            available = list(result.scalars().all())
-            if available:
-                chosen = random.choice(available)
-                chunks.append({
-                    "text": ct,
-                    "clip_url": chosen.audio_path,
-                    "duration_ms": chosen.duration_ms,
-                })
-            else:
-                chunks.append({
-                    "text": ct,
-                    "clip_url": "",
-                    "duration_ms": 0,
-                })
-        return chunks
+            round_path.write_bytes(buf.getvalue())
+
+            audio_url = f"/audio/{plan_id}/round_{round_num}.mp3"
+            enriched_rounds.append({
+                **rnd,
+                "audio_url": audio_url,
+                "timestamps": timestamps,
+            })
+
+        return {**plan, "rounds": enriched_rounds}

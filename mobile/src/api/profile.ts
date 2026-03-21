@@ -7,9 +7,6 @@ export interface Profile {
   total_sessions: number;
   total_training_minutes: number;
   last_session_at: string | null;
-  combo_exposure_json: Record<string, number>;
-  template_preference_json: Record<string, number>;
-  session_frequency: number;
 }
 
 export interface ProfileUpdate {

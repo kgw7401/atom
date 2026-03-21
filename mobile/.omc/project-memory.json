@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1772982263096,
-  "projectRoot": "/Users/kgw7401/atom-a/mobile",
+  "lastScanned": 1773185425382,
+  "projectRoot": "/Users/kgw7401/atom/mobile",
   "techStack": {
     "languages": [
       {
@@ -46,7 +46,7 @@
     "namingStyle": null,
     "importStyle": null,
     "testPattern": null,
-    "fileOrganization": "type-based"
+    "fileOrganization": null
   },
   "structure": {
     "isMonorepo": false,
@@ -62,57 +62,224 @@
       "path": "src",
       "purpose": "Source code",
       "fileCount": 0,
-      "lastAccessed": 1772982263090,
+      "lastAccessed": 1773185425374,
       "keyFiles": []
     },
     "src/api": {
       "path": "src/api",
       "purpose": "API routes",
       "fileCount": 4,
-      "lastAccessed": 1772982263092,
+      "lastAccessed": 1773185425374,
       "keyFiles": [
         "client.ts",
         "profile.ts",
         "session.ts"
       ]
-    },
-    "src/components": {
-      "path": "src/components",
-      "purpose": "UI components",
-      "fileCount": 0,
-      "lastAccessed": 1772982263092,
-      "keyFiles": []
     }
   },
   "hotPaths": [
     {
-      "path": "src/screens/ActiveSessionScreen.tsx",
-      "accessCount": 12,
-      "lastAccessed": 1773149512146,
+      "path": "src/screens/HomeScreen.tsx",
+      "accessCount": 6,
+      "lastAccessed": 1773326012454,
       "type": "file"
     },
     {
-      "path": "App.tsx",
+      "path": "src/screens/HistoryScreen.tsx",
       "accessCount": 5,
-      "lastAccessed": 1773149965003,
-      "type": "file"
-    },
-    {
-      "path": "src/api/session.ts",
-      "accessCount": 2,
-      "lastAccessed": 1772982925190,
-      "type": "file"
-    },
-    {
-      "path": "package.json",
-      "accessCount": 2,
-      "lastAccessed": 1773149981757,
+      "lastAccessed": 1773239388605,
       "type": "file"
     },
     {
       "path": "src/screens/PlanPreviewScreen.tsx",
+      "accessCount": 4,
+      "lastAccessed": 1773239146253,
+      "type": "file"
+    },
+    {
+      "path": "App.tsx",
+      "accessCount": 4,
+      "lastAccessed": 1773239296139,
+      "type": "file"
+    },
+    {
+      "path": "src/screens/SessionSetupScreen.tsx",
+      "accessCount": 4,
+      "lastAccessed": 1773239369501,
+      "type": "file"
+    },
+    {
+      "path": "src/screens/ProfileScreen.tsx",
+      "accessCount": 4,
+      "lastAccessed": 1773239430892,
+      "type": "file"
+    },
+    {
+      "path": "src/screens/SettingsScreen.tsx",
+      "accessCount": 4,
+      "lastAccessed": 1773239445138,
+      "type": "file"
+    },
+    {
+      "path": "src/screens/ActiveSessionScreen.tsx",
+      "accessCount": 4,
+      "lastAccessed": 1773323950063,
+      "type": "file"
+    },
+    {
+      "path": "src/api/profile.ts",
+      "accessCount": 3,
+      "lastAccessed": 1773238395571,
+      "type": "file"
+    },
+    {
+      "path": "src/api/session.ts",
+      "accessCount": 3,
+      "lastAccessed": 1773238395846,
+      "type": "file"
+    },
+    {
+      "path": "src/screens/SessionEndScreen.tsx",
+      "accessCount": 3,
+      "lastAccessed": 1773239218246,
+      "type": "file"
+    },
+    {
+      "path": "package.json",
+      "accessCount": 3,
+      "lastAccessed": 1773326013612,
+      "type": "file"
+    },
+    {
+      "path": "src/components/PrimaryButton.tsx",
+      "accessCount": 3,
+      "lastAccessed": 1773326018570,
+      "type": "file"
+    },
+    {
+      "path": "src/store/settingsStore.ts",
+      "accessCount": 2,
+      "lastAccessed": 1773236175132,
+      "type": "file"
+    },
+    {
+      "path": "src/api/client.ts",
+      "accessCount": 2,
+      "lastAccessed": 1773238399882,
+      "type": "file"
+    },
+    {
+      "path": "babel.config.js",
+      "accessCount": 2,
+      "lastAccessed": 1773239097392,
+      "type": "file"
+    },
+    {
+      "path": "src/theme.ts",
+      "accessCount": 2,
+      "lastAccessed": 1773326012522,
+      "type": "file"
+    },
+    {
+      "path": "src/components/CoachCard.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1773326015917,
+      "type": "file"
+    },
+    {
+      "path": "src/components/SecondaryButton.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1773326018802,
+      "type": "file"
+    },
+    {
+      "path": "src/components/SectionLabel.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1773326019017,
+      "type": "file"
+    },
+    {
+      "path": "src/components/StatCard.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1773326019296,
+      "type": "file"
+    },
+    {
+      "path": "src/components/MilestoneBadge.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1773326019398,
+      "type": "file"
+    },
+    {
+      "path": "src/components/ComboProgressBar.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1773326019820,
+      "type": "file"
+    },
+    {
+      "path": "src/components/RoundFeedbackOverlay.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1773326020067,
+      "type": "file"
+    },
+    {
+      "path": "src/api/templates.ts",
       "accessCount": 1,
-      "lastAccessed": 1772982863821,
+      "lastAccessed": 1773235913765,
+      "type": "file"
+    },
+    {
+      "path": "app.json",
+      "accessCount": 1,
+      "lastAccessed": 1773235918575,
+      "type": "file"
+    },
+    {
+      "path": "tsconfig.json",
+      "accessCount": 1,
+      "lastAccessed": 1773235918682,
+      "type": "file"
+    },
+    {
+      "path": "src/hooks/useOnboarding.ts",
+      "accessCount": 1,
+      "lastAccessed": 1773239250649,
+      "type": "file"
+    },
+    {
+      "path": "src/screens/onboarding/ExperienceScreen.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1773239264388,
+      "type": "file"
+    },
+    {
+      "path": "src/screens/onboarding/GoalScreen.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1773239276888,
+      "type": "file"
+    },
+    {
+      "path": "src/components/ProBadge.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1773326020241,
+      "type": "file"
+    },
+    {
+      "path": "src/components/SegmentTabs.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1773326020458,
+      "type": "file"
+    },
+    {
+      "path": "src/components/Stepper.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1773326020680,
+      "type": "file"
+    },
+    {
+      "path": "src/components/TagPills.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1773326020858,
       "type": "file"
     }
   ],

@@ -13,7 +13,7 @@ import Animated, {
   FadeOut,
 } from 'react-native-reanimated';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { PlanDetail, Segment } from '../api/session';
+import { PlanDetail, Round, Segment } from '../api/session';
 import { useSettingsStore } from '../store/settingsStore';
 import { COLORS, SPACING, TYPOGRAPHY } from '../theme';
 
@@ -159,32 +159,6 @@ export default function ActiveSessionScreen({ route, navigation }: Props) {
   useEffect(() => {
     let countdownTimer: ReturnType<typeof setInterval> | null = null;
 
-    // ── Play a single audio chunk ─────────────────────────────────────
-    const playChunk = async (clipUrl: string): Promise<void> => {
-      const fullUrl = serverUrl + clipUrl;
-      try {
-        const { sound } = await Audio.Sound.createAsync({ uri: fullUrl });
-        soundRef.current = sound;
-
-        await sound.playAsync();
-
-        // Wait for playback to finish
-        await new Promise<void>((resolve) => {
-          sound.setOnPlaybackStatusUpdate((status) => {
-            if (!status.isLoaded || status.didJustFinish) {
-              resolve();
-            }
-          });
-        });
-
-        await sound.unloadAsync();
-        soundRef.current = null;
-      } catch {
-        // Audio failed — skip this chunk
-        soundRef.current = null;
-      }
-    };
-
     // ── Speak with expo-speech (fallback when no audio) ───────────────
     const speakAsync = (text: string): Promise<void> =>
       new Promise<void>((resolve) => {
@@ -198,8 +172,91 @@ export default function ActiveSessionScreen({ route, navigation }: Props) {
         });
       });
 
-    // ── Play a segment (chunk-by-chunk or TTS fallback) ───────────────
-    const playSegment = async (segment: Segment): Promise<void> => {
+    // ── Play per-round assembled audio with timestamp sync ────────────
+    const playRoundAudio = async (round: Round): Promise<void> => {
+      const audioUrl = round.audio_url!;
+      const timestamps = round.timestamps!;
+      const fullUrl = serverUrl + audioUrl;
+
+      try {
+        const { sound } = await Audio.Sound.createAsync({ uri: fullUrl });
+        soundRef.current = sound;
+
+        let lastSegIdx = -1;
+        let finished = false;
+
+        // Single callback: track position for text sync + detect finish
+        sound.setOnPlaybackStatusUpdate((status) => {
+          if (!status.isLoaded || finished) return;
+
+          if (status.didJustFinish) {
+            finished = true;
+            return;
+          }
+
+          const pos = status.positionMillis;
+          for (let j = timestamps.length - 1; j >= 0; j--) {
+            if (pos >= timestamps[j].start_ms) {
+              if (j !== lastSegIdx) {
+                lastSegIdx = j;
+                segmentsDeliveredRef.current++;
+                setCurrentText(timestamps[j].text);
+                setSegmentKey((k) => k + 1);
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              }
+              break;
+            }
+          }
+        });
+
+        await sound.playAsync();
+
+        // Poll until playback finishes or aborted
+        await new Promise<void>((resolve) => {
+          const interval = setInterval(async () => {
+            if (abortRef.current || finished) {
+              clearInterval(interval);
+              resolve();
+              return;
+            }
+            try {
+              const s = await sound.getStatusAsync();
+              if (!s.isLoaded || s.didJustFinish) {
+                clearInterval(interval);
+                resolve();
+              }
+            } catch { clearInterval(interval); resolve(); }
+          }, 250);
+        });
+
+        await sound.unloadAsync();
+        soundRef.current = null;
+      } catch {
+        soundRef.current = null;
+      }
+    };
+
+    // ── Play a single audio chunk (fallback path) ─────────────────────
+    const playChunk = async (clipUrl: string): Promise<void> => {
+      const fullUrl = serverUrl + clipUrl;
+      try {
+        const { sound } = await Audio.Sound.createAsync({ uri: fullUrl });
+        soundRef.current = sound;
+        await sound.playAsync();
+        await new Promise<void>((resolve) => {
+          sound.setOnPlaybackStatusUpdate((status) => {
+            if (!status.isLoaded || status.didJustFinish) resolve();
+          });
+        });
+        await sound.unloadAsync();
+        soundRef.current = null;
+      } catch {
+        soundRef.current = null;
+      }
+    };
+
+    // ── Play a segment chunk-by-chunk (fallback path) ─────────────────
+    const playSegmentFallback = async (segment: Segment): Promise<void> => {
       if (abortRef.current) return;
 
       segmentsDeliveredRef.current++;
@@ -210,28 +267,18 @@ export default function ActiveSessionScreen({ route, navigation }: Props) {
       const hasAudio = segment.chunks.some((c) => c.clip_url);
 
       if (hasAudio) {
-        // Play chunks with gaps
         for (let i = 0; i < segment.chunks.length; i++) {
           if (abortRef.current) break;
           const chunk = segment.chunks[i];
-
           if (chunk.clip_url) {
             await playChunk(chunk.clip_url);
           } else {
-            // Missing chunk — use duration as silence
             await sleepMs(chunk.duration_ms || 300);
           }
-
-          // Gap between chunks (not after last)
-          if (i < segment.chunks.length - 1) {
-            await sleepMs(CHUNK_GAP_MS);
-          }
+          if (i < segment.chunks.length - 1) await sleepMs(CHUNK_GAP_MS);
         }
-
-        // Pause after segment = total chunk duration + 300ms
         await sleepMs(SEGMENT_PAUSE_MS);
       } else {
-        // No audio available — fall back to TTS
         await speakAsync(segment.text);
         await sleepMs(SEGMENT_PAUSE_MS);
       }
@@ -252,7 +299,6 @@ export default function ActiveSessionScreen({ route, navigation }: Props) {
         setCurrentText('');
         setSecondsLeft(secsLeft);
 
-        // Start countdown timer
         if (countdownTimer) clearInterval(countdownTimer);
         countdownTimer = setInterval(() => {
           if (pausedRef.current) return;
@@ -260,10 +306,15 @@ export default function ActiveSessionScreen({ route, navigation }: Props) {
           setSecondsLeft(secsLeft);
         }, 1000);
 
-        // Play segments sequentially
-        for (const segment of round.segments) {
-          if (abortRef.current) break;
-          await playSegment(segment);
+        if (round.audio_url && round.timestamps?.length) {
+          // ── Per-round assembled audio path ──
+          await playRoundAudio(round);
+        } else {
+          // ── Fallback: play segments individually ──
+          for (const segment of round.segments) {
+            if (abortRef.current) break;
+            await playSegmentFallback(segment);
+          }
         }
 
         if (countdownTimer) clearInterval(countdownTimer);

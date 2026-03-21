@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: atom-api
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: ATOM_DATABASE_URL
+        value: sqlite+aiosqlite:///data/atom.db
+      - key: ATOM_LLM_PROVIDER
+        value: anthropic
+      - key: ANTHROPIC_API_KEY
+        sync: false

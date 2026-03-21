@@ -1,0 +1,37 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+.venv
+venv
+.eggs
+*.egg-info
+
+# IDE
+.vscode
+.idea
+
+# Mobile app (not needed in backend image)
+mobile/
+
+# Archives
+archive/
+
+# Specs/docs
+specs/
+*.md
+
+# Local data (regenerated on startup)
+data/
+
+# OMC / Claude
+.omc/
+.claude/
+
+# Environment (secrets set via Render dashboard)
+.env
+.env.*

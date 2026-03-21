@@ -71,7 +71,7 @@ class LLMClient:
         self,
         system: str,
         user: str,
-        max_tokens: int = 2000,
+        max_tokens: int = 4000,
         temperature: float = 0.8,
     ) -> dict:
         """Generate a structured JSON response. Returns parsed dict."""
@@ -89,6 +89,10 @@ class LLMClient:
             system=system,
             messages=[{"role": "user", "content": user}],
         )
+        self._log_usage(
+            input_tokens=message.usage.input_tokens,
+            output_tokens=message.usage.output_tokens,
+        )
         text = message.content[0].text.strip()
         return self._parse_json(text)
 
@@ -104,8 +108,31 @@ class LLMClient:
                 {"role": "user", "content": user},
             ],
         )
+        self._log_usage(
+            input_tokens=response.usage.prompt_tokens,
+            output_tokens=response.usage.completion_tokens,
+        )
         text = response.choices[0].message.content.strip()
         return self._parse_json(text)
+
+    def _log_usage(self, input_tokens: int, output_tokens: int) -> None:
+        # Prices per 1M tokens (USD)
+        PRICES: dict[str, tuple[float, float]] = {
+            "claude-haiku-4-5-20251001": (0.80, 4.00),
+            "claude-haiku-4-5":          (0.80, 4.00),
+            "claude-sonnet-4-5":         (3.00, 15.00),
+            "claude-opus-4-5":           (15.00, 75.00),
+            "gpt-4o-mini":               (0.15, 0.60),
+            "gpt-4o":                    (5.00, 15.00),
+        }
+        price_in, price_out = PRICES.get(self.model, (0.0, 0.0))
+        cost_usd = (input_tokens * price_in + output_tokens * price_out) / 1_000_000
+        cost_krw = cost_usd * 1_380  # approximate KRW rate
+        print(
+            f"[LLM] {self.model} | "
+            f"in={input_tokens} out={output_tokens} tokens | "
+            f"${cost_usd:.4f} (₩{cost_krw:.1f})"
+        )
 
     @staticmethod
     def _parse_json(text: str) -> dict:

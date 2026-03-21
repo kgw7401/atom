@@ -1,21 +1,24 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { COLORS } from '../theme';
 
-type Props = {
-  navigation: NativeStackNavigationProp<any>;
-};
+type Props = { navigation: NativeStackNavigationProp<any> };
 
 export default function HomeScreen({ navigation }: Props) {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>ATOM</Text>
-      <Text style={styles.subtitle}>AI Boxing Coach</Text>
+      <View style={styles.top}>
+        <Text style={styles.logo}>ATOM</Text>
+        <Text style={styles.sub}>AI 복싱 코치</Text>
+      </View>
+
       <TouchableOpacity
-        style={styles.startButton}
+        style={styles.startBtn}
         onPress={() => navigation.navigate('SessionSetup')}
+        activeOpacity={0.85}
       >
-        <Text style={styles.startButtonText}>세션 시작</Text>
+        <Text style={styles.startBtnText}>훈련 시작</Text>
       </TouchableOpacity>
     </View>
   );
@@ -24,32 +27,37 @@ export default function HomeScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0a0a0a',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
+    backgroundColor: COLORS.BG,
+    paddingHorizontal: 32,
+    justifyContent: 'space-between',
+    paddingTop: 120,
+    paddingBottom: 80,
   },
-  title: {
-    color: '#e63946',
-    fontSize: 56,
+  top: {
+    alignItems: 'center',
+  },
+  logo: {
+    color: COLORS.RED,
+    fontSize: 52,
     fontWeight: '900',
     letterSpacing: 8,
   },
-  subtitle: {
-    color: '#888',
-    fontSize: 16,
-    marginBottom: 60,
-    letterSpacing: 2,
+  sub: {
+    color: COLORS.TEXT_3,
+    fontSize: 15,
+    marginTop: 8,
+    letterSpacing: 1,
   },
-  startButton: {
-    backgroundColor: '#e63946',
-    borderRadius: 12,
+  startBtn: {
+    backgroundColor: COLORS.RED,
+    borderRadius: 16,
     paddingVertical: 20,
-    paddingHorizontal: 60,
+    alignItems: 'center',
   },
-  startButtonText: {
+  startBtnText: {
     color: '#fff',
     fontSize: 20,
     fontWeight: '700',
+    letterSpacing: 1,
   },
 });

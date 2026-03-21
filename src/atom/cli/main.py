@@ -276,80 +276,140 @@ async def _profile_set(experience: str | None, goal: str | None) -> None:
     click.echo(f"  Goal:       {p.goal or '(not set)'}")
 
 
-# ── chunks ──────────────────────────────────────────────────────────
+# ── audio ──────────────────────────────────────────────────────────
 
 @cli.group()
-def chunks() -> None:
-    """Manage audio chunks for combo assembly."""
+def audio() -> None:
+    """Generate and manage TTS audio for combos and cues."""
     pass
 
 
-@chunks.command("checklist")
-def chunks_checklist() -> None:
-    """Generate recording checklist (what to record and how many takes)."""
-    from atom.services.audio_service import generate_checklist
-
-    items = generate_checklist()
-    total_recordings = sum(i["suggested_takes"] for i in items)
-
-    click.echo(f"{'Text':<24} {'Reuse':>5} {'Takes':>5}")
-    click.echo("-" * 38)
-
-    for item in items:
-        click.echo(f"{item['text']:<24} {item['reuse_count']:>5} {item['suggested_takes']:>5}")
-
-    click.echo(f"\nTotal items: {len(items)}")
-    click.echo(f"Total recordings needed: {total_recordings}")
+@audio.command("sample")
+@click.option("--rate", default=None, help="Speech rate (e.g. +15%)")
+@click.option("--pitch", default=None, help="Pitch (e.g. +30Hz)")
+@click.option("--volume", default=None, help="Volume (e.g. +50%)")
+@click.option("--voice", default=None, help="edge-tts voice name")
+def audio_sample(rate: str | None, pitch: str | None, volume: str | None, voice: str | None) -> None:
+    """Generate a few TTS samples to test voice settings."""
+    run(_audio_sample(rate, pitch, volume, voice))
 
 
-@chunks.command("import")
-@click.argument("directory", type=click.Path(exists=True, file_okay=False, path_type=Path))
-def chunks_import(directory: Path) -> None:
-    """Import audio files from a directory into the database.
+async def _audio_sample(
+    rate: str | None, pitch: str | None, volume: str | None, voice: str | None,
+) -> None:
+    from atom.services.audio_service import generate_tts, get_all_texts, EDGE_SETTINGS, EDGE_VOICE
 
-    Expected filenames: {text}_{variant}.mp3 or {text}.mp3
-    """
-    run(_chunks_import(directory))
+    texts_info = get_all_texts()
+    combos = texts_info["combos"]
+    cues = texts_info["cues"]
+
+    # Pick samples: short/medium/long combo + 2 cues
+    combos_sorted = sorted(combos, key=len)
+    sample_texts = [
+        combos_sorted[0],
+        combos_sorted[len(combos_sorted) // 2],
+        combos_sorted[-1],
+        cues[0],
+        cues[-1],
+    ]
+
+    settings = {
+        "rate": rate or EDGE_SETTINGS["rate"],
+        "pitch": pitch or EDGE_SETTINGS["pitch"],
+        "volume": volume or EDGE_SETTINGS["volume"],
+    }
+    click.echo(f"Voice: {voice or EDGE_VOICE}")
+    click.echo(f"Settings: {settings}")
+    click.echo()
+
+    output_dir = Path("data/audio/samples")
+    result = await generate_tts(
+        texts=sample_texts,
+        output_dir=output_dir,
+        voice=voice,
+        rate=settings["rate"],
+        pitch=settings["pitch"],
+        volume=settings["volume"],
+    )
+
+    click.echo(f"\nGenerated: {result['generated']}, Skipped: {result['skipped']}")
+    click.echo(f"Files in: {output_dir.resolve()}")
 
 
-async def _chunks_import(directory: Path) -> None:
-    from atom.services.audio_service import import_chunks
+@audio.command("generate")
+@click.option("--rate", default=None, help="Speech rate (e.g. +15%)")
+@click.option("--pitch", default=None, help="Pitch (e.g. +30Hz)")
+@click.option("--volume", default=None, help="Volume (e.g. +50%)")
+@click.option("--voice", default=None, help="edge-tts voice name")
+@click.option("--no-import", is_flag=True, help="Skip auto-import to DB")
+def audio_generate(
+    rate: str | None, pitch: str | None, volume: str | None,
+    voice: str | None, no_import: bool,
+) -> None:
+    """Generate TTS audio for all combos and cues."""
+    run(_audio_generate(rate, pitch, volume, voice, no_import))
 
-    async with async_session() as session:
-        result = await import_chunks(directory, session)
 
-    click.echo(f"Imported: {result['imported']}")
-    click.echo(f"Skipped (already exists): {result['skipped']}")
+async def _audio_generate(
+    rate: str | None, pitch: str | None, volume: str | None,
+    voice: str | None, no_import: bool,
+) -> None:
+    from atom.services.audio_service import generate_tts, get_all_texts, import_audio
+
+    texts_info = get_all_texts()
+    all_texts = texts_info["combos"] + texts_info["cues"]
+
+    click.echo(f"Total: {texts_info['total']} ({len(texts_info['combos'])} combos, {len(texts_info['cues'])} cues)")
+
+    output_dir = Path("data/audio/chunks")
+
+    result = await generate_tts(
+        texts=all_texts,
+        output_dir=output_dir,
+        voice=voice,
+        rate=rate,
+        pitch=pitch,
+        volume=volume,
+    )
+
+    click.echo(f"\nGenerated: {result['generated']}")
+    click.echo(f"Skipped (already exist): {result['skipped']}")
     if result["errors"]:
         click.echo(f"Errors: {len(result['errors'])}")
         for err in result["errors"]:
             click.echo(f"  {err}")
 
+    # Auto-import to DB
+    if not no_import and result["generated"] > 0:
+        click.echo(f"\nImporting to database...")
+        async with async_session() as session:
+            imp = await import_audio(output_dir, session)
+        click.echo(f"Imported: {imp['imported']}, DB skipped: {imp['skipped']}")
 
-@chunks.command("validate")
-def chunks_validate() -> None:
-    """Check that all combos can be assembled from available audio chunks."""
-    run(_chunks_validate())
+
+@audio.command("validate")
+def audio_validate() -> None:
+    """Check that all combos and cues have audio files."""
+    run(_audio_validate())
 
 
-async def _chunks_validate() -> None:
-    from atom.services.audio_service import validate_chunks
+async def _audio_validate() -> None:
+    from atom.services.audio_service import validate_audio
 
     async with async_session() as session:
-        result = await validate_chunks(session)
+        result = await validate_audio(session)
 
-    click.echo(f"Total combos: {result['total_combos']}")
+    click.echo(f"Total: {result['total']}")
     click.echo(f"Covered: {result['covered']}")
 
     if result["missing"]:
-        click.echo(f"\nMissing chunks for {len(result['missing'])} combos:")
-        for item in result["missing"][:20]:
-            missing_str = ", ".join(item["missing_chunks"])
-            click.echo(f"  {item['combo']}: needs [{missing_str}]")
+        click.echo(f"\nMissing audio for {len(result['missing'])} texts:")
+        for text in result["missing"][:20]:
+            click.echo(f"  {text}")
         if len(result["missing"]) > 20:
             click.echo(f"  ... and {len(result['missing']) - 20} more")
     else:
-        click.echo("\nAll combos fully covered!")
+        click.echo("\nAll combos and cues covered!")
 
 
 if __name__ == "__main__":

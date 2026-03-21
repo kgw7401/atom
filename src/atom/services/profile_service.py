@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from sqlalchemy import select
@@ -20,7 +19,6 @@ class ProfileService:
         return result.scalar_one_or_none()
 
     async def update_profile(self, **kwargs: Any) -> UserProfile:
-        """Update user-editable fields (experience_level, goal)."""
         profile = await self.get_profile()
         if profile is None:
             profile = UserProfile(**kwargs)
@@ -35,7 +33,7 @@ class ProfileService:
         return profile
 
     async def aggregate(self) -> UserProfile:
-        """Re-compute profile stats from all session logs. Saves and returns updated profile."""
+        """Re-compute profile stats from all session logs."""
         profile = await self.get_profile()
         if profile is None:
             profile = UserProfile()
@@ -43,7 +41,6 @@ class ProfileService:
 
         logs_result = await self.session.execute(select(SessionLog))
         logs = list(logs_result.scalars().all())
-
         completed = [l for l in logs if l.status == "completed"]
 
         profile.total_sessions = len(completed)
@@ -52,38 +49,9 @@ class ProfileService:
         if completed:
             profile.last_session_at = max(l.started_at for l in completed)
 
-        # Combo exposure
-        exposure: dict[str, int] = {}
-        for log in completed:
-            events = (log.delivery_log_json or {}).get("events", [])
-            for ev in events:
-                if ev.get("type") == "combo_called":
-                    name = ev.get("combo_display_name", "")
-                    if name:
-                        exposure[name] = exposure.get(name, 0) + 1
-        profile.combo_exposure_json = exposure
-
-        # Template preference
-        template_pref: dict[str, int] = {}
-        for log in completed:
-            t = log.template_name
-            template_pref[t] = template_pref.get(t, 0) + 1
-        profile.template_preference_json = template_pref
-
-        # Session frequency — rolling 4-week window
-        # Strip tz since SQLite returns naive datetimes
-        four_weeks_ago = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(weeks=4)
-        recent = [
-            l for l in completed
-            if l.started_at and l.started_at.replace(tzinfo=None) >= four_weeks_ago
-        ]
-        profile.session_frequency = len(recent) / 4.0  # avg per week
-
         await self.session.commit()
         await self.session.refresh(profile)
         return profile
-
-    # ── Session history ───────────────────────────────────────────────
 
     async def list_sessions(self, limit: int = 20, offset: int = 0) -> list[SessionLog]:
         result = await self.session.execute(
