@@ -19,6 +19,8 @@ archive/*.tar.gz
 *.db
 *.sqlite
 /data/
+!/data/audio/
+!/data/audio/chunks/
 
 # Python
 .venv/
