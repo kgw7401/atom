@@ -283,16 +283,16 @@
       "type": "file"
     },
     {
+      "path": ".dockerignore",
+      "accessCount": 5,
+      "lastAccessed": 1774103932895,
+      "type": "file"
+    },
+    {
       "path": "mobile/src",
       "accessCount": 4,
       "lastAccessed": 1774099977244,
       "type": "directory"
-    },
-    {
-      "path": ".dockerignore",
-      "accessCount": 4,
-      "lastAccessed": 1774103814405,
-      "type": "file"
     },
     {
       "path": "mobile/src/api/client.ts",
