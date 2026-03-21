@@ -27,6 +27,7 @@ specs/
 
 # Local data (regenerated on startup)
 data/
+!data/audio/chunks/
 
 # OMC / Claude
 .omc/
