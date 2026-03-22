@@ -5,6 +5,7 @@ export interface PlanRequest {
   rounds?: number;
   round_duration_sec?: number;
   rest_sec?: number;
+  program_day_id?: string;
 }
 
 export interface Chunk {
@@ -44,6 +45,21 @@ export interface PlanResponse {
   rest_sec: number;
   plan: PlanDetail;
   audio_ready?: boolean;
+  day_number?: number;
+  theme?: string;
+  coach_comment?: string;
+}
+
+export interface TodayData {
+  streak: number;
+  day_number: number;
+  day_total: number;
+  theme: string;
+  theme_description: string;
+  coach_comment: string;
+  level: string;
+  week: number;
+  next_day_preview: { day_number: number; theme: string } | null;
 }
 
 export interface SessionSummary {
@@ -79,6 +95,9 @@ export interface SessionLogResponse {
   segments_delivered: number;
   status: string;
 }
+
+export const fetchToday = (): Promise<TodayData> =>
+  apiFetch<TodayData>('/api/today');
 
 export const generatePlan = (body: PlanRequest): Promise<PlanResponse> =>
   apiFetch<PlanResponse>('/api/sessions/plan', {

@@ -1,17 +1,22 @@
 export const COLORS = {
-  BG: '#0a0a0a',
-  SURFACE: '#141414',
-  RED: '#e63946',
-  RED_BG: '#1a0608',
+  BG: '#0A0A0A',
+  SURFACE: '#151515',
+  RED: '#E5383B',
+  RED_BG: '#1A0608',
   GREEN: '#4caf50',
-  ORANGE: '#ff9800',
-  GOLD: '#ffd700',
+  ORANGE: '#FF6B35',
+  GOLD: '#FFD166',
   GOLD_BG: '#2a2a1a',
+  BLUE: '#4EA8DE',
   TEXT_1: '#f0f0f0',
   TEXT_2: '#999',
   TEXT_3: '#555',
   TEXT_GHOST: '#333',
   BORDER: '#242424',
+  // Phase background tints
+  PHASE_ROUND: '#0A140A',
+  PHASE_REST: '#080D18',
+  PHASE_FINISHER: '#1A0A00',
 } as const;
 
 export const SPACING = {
