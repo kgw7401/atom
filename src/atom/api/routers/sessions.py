@@ -23,6 +23,7 @@ async def generate_plan(body: PlanRequest):
                 rounds=body.rounds,
                 round_duration_sec=body.round_duration_sec,
                 rest_sec=body.rest_sec,
+                program_day_id=body.program_day_id,
             )
         return result
     except ValueError as e:
@@ -31,7 +32,7 @@ async def generate_plan(body: PlanRequest):
 
 @router.post("/log", response_model=SessionLogResponse, status_code=201)
 async def log_session(body: SessionLogRequest):
-    """Save a completed session and update profile aggregates."""
+    """Save a completed session, update streak, and advance program."""
     async with async_session() as db:
         log = SessionLog(
             drill_plan_id=body.drill_plan_id,
@@ -47,9 +48,13 @@ async def log_session(body: SessionLogRequest):
         await db.commit()
         await db.refresh(log)
 
-        # Update profile aggregates
+        # Update profile aggregates + streak + advance program
         from atom.services.profile_service import ProfileService
         profile_svc = ProfileService(db)
         await profile_svc.aggregate()
+
+        if body.status == "completed":
+            await profile_svc.update_streak()
+            await profile_svc.advance_program()
 
         return log

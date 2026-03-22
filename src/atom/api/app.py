@@ -12,6 +12,7 @@ from fastapi.staticfiles import StaticFiles
 
 from atom.api.routers.sessions import router as sessions_router
 from atom.api.routers.history import router as history_router
+from atom.api.routers.today import router as today_router
 from atom.models.base import async_session, init_db
 from atom.seed import seed_all
 
@@ -41,6 +42,7 @@ app.add_middleware(
 
 app.include_router(sessions_router)
 app.include_router(history_router)
+app.include_router(today_router)
 
 # Serve audio chunk files (self-recorded)
 AUDIO_DIR = Path("data/audio")

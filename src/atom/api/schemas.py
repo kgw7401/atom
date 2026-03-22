@@ -11,8 +11,9 @@ from pydantic import BaseModel, Field
 class PlanRequest(BaseModel):
     level: str = Field(default="beginner", pattern=r"^(beginner|intermediate|advanced)$")
     rounds: int = Field(default=3, ge=1, le=12)
-    round_duration_sec: int = Field(default=180, ge=30, le=600)
+    round_duration_sec: int = Field(default=120, ge=30, le=600)
     rest_sec: int = Field(default=30, ge=10, le=120)
+    program_day_id: str | None = Field(default=None)  # auto-detect from ProgramProgress if None
 
 
 class ChunkResponse(BaseModel):
@@ -52,6 +53,9 @@ class PlanResponse(BaseModel):
     rest_sec: int
     plan: PlanDetail
     audio_ready: bool = False
+    day_number: int = 0
+    theme: str = ""
+    coach_comment: str = ""
 
 
 # ── Session log schemas ───────────────────────────────────────────────
@@ -103,6 +107,10 @@ class ProfileResponse(BaseModel):
     total_sessions: int
     total_training_minutes: float
     last_session_at: datetime | None
+    current_streak: int = 0
+    longest_streak: int = 0
+    tier: str = "rookie"
+    training_preference: str = "all"
 
     model_config = {"from_attributes": True}
 
@@ -113,3 +121,21 @@ class ProfileUpdate(BaseModel):
         pattern=r"^(beginner|novice|intermediate|advanced)$",
     )
     goal: str | None = Field(default=None, max_length=500)
+    training_preference: str | None = Field(
+        default=None,
+        pattern=r"^(basics|cardio|speed|all)$",
+    )
+
+
+# ── Today (home screen) ─────────────────────────────────────────────
+
+class TodayResponse(BaseModel):
+    streak: int
+    day_number: int
+    day_total: int = 7
+    theme: str
+    theme_description: str
+    coach_comment: str
+    level: str
+    week: int
+    next_day_preview: dict | None = None  # {day_number, theme}
