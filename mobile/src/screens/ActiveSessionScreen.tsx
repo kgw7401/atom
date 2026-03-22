@@ -329,14 +329,15 @@ export default function ActiveSessionScreen({ route, navigation }: Props) {
           let restSecs = rest_sec;
           setPhase('rest');
           setSecondsLeft(restSecs);
-          await speakAsync('휴식');
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
           countdownTimer = setInterval(() => {
             if (pausedRef.current) return;
             restSecs = Math.max(0, restSecs - 1);
             setSecondsLeft(restSecs);
           }, 1000);
+
+          speakAsync('휴식');
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
           await sleepMs(rest_sec * 1000);
           if (countdownTimer) clearInterval(countdownTimer);
