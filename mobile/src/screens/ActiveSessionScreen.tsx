@@ -29,14 +29,13 @@ interface Phase {
 }
 
 const PHASES: Phase[] = [
-  { key: 'intro',    label: 'INTRO',               labelKo: '준비',   duration: 40,  bgColor: COLORS.BG },
-  { key: 'round1',   label: 'ROUND 1',             labelKo: '적응',   duration: 120, bgColor: COLORS.PHASE_ROUND, roundIndex: 0 },
-  { key: 'rest1',    label: 'REST',                labelKo: '휴식',   duration: 30,  bgColor: COLORS.PHASE_REST },
-  { key: 'round2',   label: 'ROUND 2',             labelKo: '적용',   duration: 120, bgColor: COLORS.PHASE_ROUND, roundIndex: 1 },
-  { key: 'rest2',    label: 'REST',                labelKo: '휴식',   duration: 30,  bgColor: COLORS.PHASE_REST },
-  { key: 'round3',   label: 'ROUND 3',             labelKo: '몰입',   duration: 120, bgColor: COLORS.PHASE_ROUND, roundIndex: 2 },
-  { key: 'finisher', label: 'FINISHER',            labelKo: '폭발',   duration: 90,  bgColor: COLORS.PHASE_FINISHER, roundIndex: 3 },
-  { key: 'outro',    label: 'COOL DOWN',           labelKo: '마무리', duration: 50,  bgColor: COLORS.BG },
+  { key: 'intro',    label: 'INTRO',    labelKo: '준비',   duration: 20,  bgColor: COLORS.BG },
+  { key: 'round1',   label: 'ROUND 1',  labelKo: '적응',   duration: 180, bgColor: COLORS.PHASE_ROUND, roundIndex: 0 },
+  { key: 'rest1',    label: 'REST',     labelKo: '휴식',   duration: 15,  bgColor: COLORS.PHASE_REST },
+  { key: 'round2',   label: 'ROUND 2',  labelKo: '적용',   duration: 180, bgColor: COLORS.PHASE_ROUND, roundIndex: 1 },
+  { key: 'rest2',    label: 'REST',     labelKo: '휴식',   duration: 15,  bgColor: COLORS.PHASE_REST },
+  { key: 'round3',   label: 'ROUND 3',  labelKo: '몰입',   duration: 180, bgColor: COLORS.PHASE_ROUND, roundIndex: 2 },
+  { key: 'outro',    label: 'COOL DOWN',labelKo: '마무리', duration: 10,  bgColor: COLORS.BG },
 ];
 
 const TOTAL_SESSION_SEC = PHASES.reduce((sum, p) => sum + p.duration, 0); // 600s = 10min

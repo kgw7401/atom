@@ -75,16 +75,16 @@ class SessionService:
                 text = seg["text"]
                 chunks = await template_svc._resolve_chunks(text, {})
                 round_segments.append({"text": text, "chunks": chunks})
-            rounds_list.append({"round": round_num, "segments": round_segments})
 
-        # Add finisher as round 4
-        finisher_data = day_template.finisher_json
-        finisher_segments = []
-        for seg in finisher_data["segments"]:
-            text = seg["text"]
-            chunks = await template_svc._resolve_chunks(text, {})
-            finisher_segments.append({"text": text, "chunks": chunks})
-        rounds_list.append({"round": 4, "segments": finisher_segments})
+            # Merge finisher segments into R3
+            if round_num == 3:
+                finisher_data = day_template.finisher_json
+                for seg in finisher_data["segments"]:
+                    text = seg["text"]
+                    chunks = await template_svc._resolve_chunks(text, {})
+                    round_segments.append({"text": text, "chunks": chunks})
+
+            rounds_list.append({"round": round_num, "segments": round_segments})
 
         plan = {"rounds": rounds_list}
 
