@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1774061279933,
+  "lastScanned": 1774181920588,
   "projectRoot": "/Users/kgw7401/atom",
   "techStack": {
     "languages": [
@@ -56,7 +56,7 @@
       "path": "alembic",
       "purpose": null,
       "fileCount": 3,
-      "lastAccessed": 1774061279927,
+      "lastAccessed": 1774181920584,
       "keyFiles": [
         "README",
         "env.py",
@@ -67,7 +67,7 @@
       "path": "archive",
       "purpose": null,
       "fileCount": 2,
-      "lastAccessed": 1774061279927,
+      "lastAccessed": 1774181920584,
       "keyFiles": [
         "atom_backup_ml_20260306.tar.gz",
         "pose_landmarker_heavy.task"
@@ -76,50 +76,51 @@
     "data": {
       "path": "data",
       "purpose": "Data files",
-      "fileCount": 1,
-      "lastAccessed": 1774061279927,
+      "fileCount": 2,
+      "lastAccessed": 1774181920585,
       "keyFiles": [
-        "atom.db"
+        "atom.db",
+        "recording_progress.json"
       ]
     },
     "mobile": {
       "path": "mobile",
       "purpose": null,
-      "fileCount": 6,
-      "lastAccessed": 1774061279928,
+      "fileCount": 7,
+      "lastAccessed": 1774181920585,
       "keyFiles": [
         "App.tsx",
         "app.json",
         "babel.config.js",
-        "package-lock.json",
-        "package.json"
+        "eas.json",
+        "package-lock.json"
       ]
     },
     "specs": {
       "path": "specs",
       "purpose": null,
-      "fileCount": 6,
-      "lastAccessed": 1774061279928,
+      "fileCount": 8,
+      "lastAccessed": 1774181920585,
       "keyFiles": [
         "action-recognization.md",
         "architecture.md",
         "new-mvp.md",
         "overview.md",
-        "session-template-spec.md"
+        "real-coach-spec.md"
       ]
     },
     "src": {
       "path": "src",
       "purpose": "Source code",
       "fileCount": 0,
-      "lastAccessed": 1774061279928,
+      "lastAccessed": 1774181920585,
       "keyFiles": []
     },
     "tests": {
       "path": "tests",
       "purpose": "Test files",
       "fileCount": 8,
-      "lastAccessed": 1774061279928,
+      "lastAccessed": 1774181920585,
       "keyFiles": [
         "__init__.py",
         "test_combo_api.py",
@@ -132,7 +133,7 @@
       "path": "archive/data",
       "purpose": "Data files",
       "fileCount": 3,
-      "lastAccessed": 1774061279929,
+      "lastAccessed": 1774181920586,
       "keyFiles": [
         "IMG_9101.MOV",
         "labels.txt"
@@ -142,14 +143,14 @@
       "path": "mobile/node_modules",
       "purpose": "Dependencies",
       "fileCount": 1,
-      "lastAccessed": 1774061279932,
+      "lastAccessed": 1774181920587,
       "keyFiles": []
     },
     "mobile/src": {
       "path": "mobile/src",
       "purpose": "Source code",
       "fileCount": 1,
-      "lastAccessed": 1774061279933,
+      "lastAccessed": 1774181920588,
       "keyFiles": [
         "theme.ts"
       ]
@@ -157,269 +158,180 @@
   },
   "hotPaths": [
     {
-      "path": "src/atom/services/template_service.py",
-      "accessCount": 31,
-      "lastAccessed": 1774103585593,
-      "type": "file"
-    },
-    {
-      "path": "src/atom/services/audio_service.py",
-      "accessCount": 27,
-      "lastAccessed": 1774103347541,
-      "type": "file"
-    },
-    {
-      "path": "mobile/src/screens/ActiveSessionScreen.tsx",
-      "accessCount": 22,
-      "lastAccessed": 1774143954403,
-      "type": "file"
-    },
-    {
-      "path": "src/atom/cli/main.py",
-      "accessCount": 18,
-      "lastAccessed": 1774101810758,
-      "type": "file"
-    },
-    {
-      "path": "src/atom/services/recording_service.py",
-      "accessCount": 13,
-      "lastAccessed": 1774091564000,
-      "type": "file"
-    },
-    {
       "path": "src/atom/models/tables.py",
-      "accessCount": 13,
-      "lastAccessed": 1774101594166,
-      "type": "file"
-    },
-    {
-      "path": "src",
-      "accessCount": 12,
-      "lastAccessed": 1774100834025,
-      "type": "directory"
-    },
-    {
-      "path": "",
-      "accessCount": 11,
-      "lastAccessed": 1774100883910,
-      "type": "directory"
-    },
-    {
-      "path": "pyproject.toml",
-      "accessCount": 11,
-      "lastAccessed": 1774103535179,
-      "type": "file"
-    },
-    {
-      "path": "src/atom/services/session_service.py",
-      "accessCount": 10,
-      "lastAccessed": 1774103380306,
-      "type": "file"
-    },
-    {
-      "path": "mobile/src/api/session.ts",
-      "accessCount": 9,
-      "lastAccessed": 1774101603304,
-      "type": "file"
-    },
-    {
-      "path": "src/atom/services/tts_service.py",
-      "accessCount": 9,
-      "lastAccessed": 1774103347349,
-      "type": "file"
-    },
-    {
-      "path": "src/atom/data/combo_dictionary.json",
-      "accessCount": 8,
-      "lastAccessed": 1774092216323,
-      "type": "file"
-    },
-    {
-      "path": "src/atom/api",
-      "accessCount": 8,
-      "lastAccessed": 1774101185222,
-      "type": "directory"
-    },
-    {
-      "path": "src/atom/api/schemas.py",
-      "accessCount": 8,
-      "lastAccessed": 1774103370440,
-      "type": "file"
-    },
-    {
-      "path": "src/atom/seed.py",
-      "accessCount": 8,
-      "lastAccessed": 1774103524386,
-      "type": "file"
-    },
-    {
-      "path": "src/atom/seed_templates.py",
-      "accessCount": 7,
-      "lastAccessed": 1774100816213,
+      "accessCount": 2,
+      "lastAccessed": 1774182045347,
       "type": "file"
     },
     {
       "path": "src/atom/api/app.py",
-      "accessCount": 7,
-      "lastAccessed": 1774103369747,
+      "accessCount": 2,
+      "lastAccessed": 1774182045564,
       "type": "file"
     },
     {
       "path": "src/atom/api/routers/sessions.py",
-      "accessCount": 6,
-      "lastAccessed": 1774103370166,
-      "type": "file"
-    },
-    {
-      "path": "alembic/versions/f74ee7deae92_initial_schema.py",
-      "accessCount": 5,
-      "lastAccessed": 1774067190529,
-      "type": "file"
-    },
-    {
-      "path": "Dockerfile",
-      "accessCount": 5,
-      "lastAccessed": 1774103706697,
-      "type": "file"
-    },
-    {
-      "path": ".dockerignore",
-      "accessCount": 5,
-      "lastAccessed": 1774103932895,
-      "type": "file"
-    },
-    {
-      "path": "mobile/src",
-      "accessCount": 4,
-      "lastAccessed": 1774099977244,
-      "type": "directory"
-    },
-    {
-      "path": "mobile/src/api/client.ts",
-      "accessCount": 3,
-      "lastAccessed": 1774101792236,
-      "type": "file"
-    },
-    {
-      "path": "src/atom/models/base.py",
-      "accessCount": 3,
-      "lastAccessed": 1774101799363,
-      "type": "file"
-    },
-    {
-      "path": "mobile/package.json",
-      "accessCount": 3,
-      "lastAccessed": 1774102449202,
-      "type": "file"
-    },
-    {
-      "path": "mobile/src/store/settingsStore.ts",
-      "accessCount": 3,
-      "lastAccessed": 1774102797200,
-      "type": "file"
-    },
-    {
-      "path": "src/atom",
       "accessCount": 2,
-      "lastAccessed": 1774100942584,
-      "type": "directory"
-    },
-    {
-      "path": "alembic.ini",
-      "accessCount": 2,
-      "lastAccessed": 1774101800325,
-      "type": "file"
-    },
-    {
-      "path": "mobile/app.json",
-      "accessCount": 2,
-      "lastAccessed": 1774102424383,
-      "type": "file"
-    },
-    {
-      "path": "render.yaml",
-      "accessCount": 2,
-      "lastAccessed": 1774103360627,
-      "type": "file"
-    },
-    {
-      "path": "src/atom/cli/__init__.py",
-      "accessCount": 1,
-      "lastAccessed": 1774061543749,
-      "type": "file"
-    },
-    {
-      "path": "mobile",
-      "accessCount": 1,
-      "lastAccessed": 1774065608845,
-      "type": "directory"
-    },
-    {
-      "path": "specs/session-template-spec.md",
-      "accessCount": 1,
-      "lastAccessed": 1774066820521,
-      "type": "file"
-    },
-    {
-      "path": "src/atom/cli",
-      "accessCount": 1,
-      "lastAccessed": 1774067122301,
-      "type": "directory"
-    },
-    {
-      "path": "specs/tts-spec.md",
-      "accessCount": 1,
-      "lastAccessed": 1774091543542,
-      "type": "file"
-    },
-    {
-      "path": "src/atom/services",
-      "accessCount": 1,
-      "lastAccessed": 1774099767982,
-      "type": "directory"
-    },
-    {
-      "path": "mobile/src/theme.ts",
-      "accessCount": 1,
-      "lastAccessed": 1774100816068,
+      "lastAccessed": 1774182048538,
       "type": "file"
     },
     {
       "path": "src/atom/api/routers/history.py",
-      "accessCount": 1,
-      "lastAccessed": 1774100864793,
+      "accessCount": 2,
+      "lastAccessed": 1774182048653,
       "type": "file"
     },
     {
-      "path": "mobile/src/screens/PlanPreviewScreen.tsx",
-      "accessCount": 1,
-      "lastAccessed": 1774101191166,
+      "path": "src/atom/api/schemas.py",
+      "accessCount": 2,
+      "lastAccessed": 1774182048837,
+      "type": "file"
+    },
+    {
+      "path": "src/atom/services/session_service.py",
+      "accessCount": 2,
+      "lastAccessed": 1774182056736,
+      "type": "file"
+    },
+    {
+      "path": "src/atom/services/profile_service.py",
+      "accessCount": 2,
+      "lastAccessed": 1774182056886,
       "type": "file"
     },
     {
       "path": "src/atom/services/llm_client.py",
-      "accessCount": 1,
-      "lastAccessed": 1774101593533,
+      "accessCount": 2,
+      "lastAccessed": 1774182057057,
       "type": "file"
     },
     {
-      "path": "mobile/babel.config.js",
+      "path": "src/atom/services/template_service.py",
+      "accessCount": 2,
+      "lastAccessed": 1774182057177,
+      "type": "file"
+    },
+    {
+      "path": "src/atom/ml/features.py",
+      "accessCount": 2,
+      "lastAccessed": 1774182061394,
+      "type": "file"
+    },
+    {
+      "path": "src/atom/services/recording_service.py",
+      "accessCount": 2,
+      "lastAccessed": 1774182063961,
+      "type": "file"
+    },
+    {
+      "path": "src/atom/services/tts_service.py",
+      "accessCount": 2,
+      "lastAccessed": 1774182064194,
+      "type": "file"
+    },
+    {
+      "path": "src/atom/seed_templates.py",
+      "accessCount": 2,
+      "lastAccessed": 1774182066442,
+      "type": "file"
+    },
+    {
+      "path": "src/atom/models/base.py",
+      "accessCount": 2,
+      "lastAccessed": 1774182066527,
+      "type": "file"
+    },
+    {
+      "path": "specs/real-coach.md",
       "accessCount": 1,
-      "lastAccessed": 1774101596396,
+      "lastAccessed": 1774182020395,
+      "type": "file"
+    },
+    {
+      "path": "src/atom/services/audio_service.py",
+      "accessCount": 1,
+      "lastAccessed": 1774182042134,
+      "type": "file"
+    },
+    {
+      "path": "pyproject.toml",
+      "accessCount": 1,
+      "lastAccessed": 1774182045762,
       "type": "file"
     },
     {
       "path": ".env",
       "accessCount": 1,
-      "lastAccessed": 1774101607186,
+      "lastAccessed": 1774182045888,
       "type": "file"
     },
     {
-      "path": "mobile/eas.json",
+      "path": "mobile/App.tsx",
       "accessCount": 1,
-      "lastAccessed": 1774102447629,
+      "lastAccessed": 1774182045923,
+      "type": "file"
+    },
+    {
+      "path": "mobile/package.json",
+      "accessCount": 1,
+      "lastAccessed": 1774182046022,
+      "type": "file"
+    },
+    {
+      "path": "mobile/src/screens/HomeScreen.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1774182056093,
+      "type": "file"
+    },
+    {
+      "path": "mobile/src/screens/ActiveSessionScreen.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1774182056558,
+      "type": "file"
+    },
+    {
+      "path": "mobile/src/api/session.ts",
+      "accessCount": 1,
+      "lastAccessed": 1774182056719,
+      "type": "file"
+    },
+    {
+      "path": "src/atom/cli/main.py",
+      "accessCount": 1,
+      "lastAccessed": 1774182060289,
+      "type": "file"
+    },
+    {
+      "path": "src/atom/ml/training/tcn_model.py",
+      "accessCount": 1,
+      "lastAccessed": 1774182061424,
+      "type": "file"
+    },
+    {
+      "path": "specs/overview.md",
+      "accessCount": 1,
+      "lastAccessed": 1774182064421,
+      "type": "file"
+    },
+    {
+      "path": "mobile/src/screens/SessionSetupScreen.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1774182064543,
+      "type": "file"
+    },
+    {
+      "path": "src/atom/seed.py",
+      "accessCount": 1,
+      "lastAccessed": 1774182066073,
+      "type": "file"
+    },
+    {
+      "path": "mobile/src/screens/FeedScreen.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1774182070066,
       "type": "file"
     }
   ],
   "userDirectives": []
+}ectives": []
 }

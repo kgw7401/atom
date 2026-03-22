@@ -93,5 +93,48 @@ class UserProfile(Base):
     combo_exposure_json: Mapped[dict] = mapped_column(JSON, default=dict)
     template_preference_json: Mapped[dict] = mapped_column(JSON, default=dict)
     session_frequency: Mapped[float] = mapped_column(Float, default=0.0)
+    performance_summary_json: Mapped[dict] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, onupdate=_now)
+
+
+class VideoUpload(Base):
+    """Uploaded video for analysis."""
+
+    __tablename__ = "video_uploads"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    session_log_id: Mapped[str | None] = mapped_column(String(36), default=None)
+    drill_plan_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    video_path: Mapped[str] = mapped_column(String(500), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="uploaded")
+    error_message: Mapped[str | None] = mapped_column(Text, default=None)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
+class AnalysisResult(Base):
+    """Results of video analysis pipeline."""
+
+    __tablename__ = "analysis_results"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    video_upload_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    predicted_events: Mapped[dict] = mapped_column(JSON, default=list)
+    expected_events: Mapped[dict] = mapped_column(JSON, default=list)
+    comparison_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    feedback_text: Mapped[str] = mapped_column(Text, default="")
+    accuracy_score: Mapped[float] = mapped_column(Float, default=0.0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
+class SessionRecommendation(Base):
+    """Next session recommendation based on analysis."""
+
+    __tablename__ = "session_recommendations"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    analysis_result_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    recommended_level: Mapped[str] = mapped_column(String(20), nullable=False)
+    recommended_topic: Mapped[str] = mapped_column(String(200), default="")
+    narrative_text: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
