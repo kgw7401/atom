@@ -234,7 +234,7 @@ export default function ActiveSessionScreen({ route, navigation }: Props) {
   };
 
   // ── Play segment chunk-by-chunk ────────────────────────────────────
-  const playSegmentFallback = async (segment: Segment): Promise<void> => {
+  const playSegmentFallback = async (segment: Segment, pauseMs: number): Promise<void> => {
     if (abortRef.current) return;
 
     segmentsDeliveredRef.current++;
@@ -253,23 +253,44 @@ export default function ActiveSessionScreen({ route, navigation }: Props) {
         } else {
           await sleepMs(chunk.duration_ms || 300);
         }
-        if (i < segment.chunks.length - 1) await sleepMs(150);
+        if (i < segment.chunks.length - 1) await sleepMs(100);
       }
-      await sleepMs(300);
+      await sleepMs(pauseMs);
     } else {
       await speakAsync(segment.text);
-      await sleepMs(300);
+      await sleepMs(pauseMs);
     }
   };
 
-  // ── Play a round (assembled or fallback) ───────────────────────────
-  const playRound = async (round: Round): Promise<void> => {
-    if (round.audio_url && round.timestamps?.length) {
-      await playRoundAudio(round);
-    } else {
-      for (const segment of round.segments) {
-        if (abortRef.current) break;
-        await playSegmentFallback(segment);
+  // ── Play a round looping segments until phase timer expires ────────
+  const playRoundLooped = async (
+    round: Round,
+    getSecsLeft: () => number,
+    roundIndex: number,
+  ): Promise<void> => {
+    // Round-specific pause durations from training-program-design.md
+    const ROUND_PAUSE_MS = [500, 300, 150]; // R1, R2, R3
+    const FINISHER_PAUSE_MS = 50;
+
+    const basePauseMs = ROUND_PAUSE_MS[roundIndex] ?? 150;
+    const segments = round.segments;
+    if (!segments || segments.length === 0) return;
+
+    // Determine which segments are finisher (last N segments from finisher_json merged into R3)
+    // For R3 (roundIndex=2), finisher segments are appended at the end
+    // We'll use basePauseMs for regular segments and FINISHER_PAUSE_MS for the last pass in R3
+
+    let loopCount = 0;
+    while (getSecsLeft() > 2 && !abortRef.current) {
+      loopCount++;
+      for (let i = 0; i < segments.length; i++) {
+        if (abortRef.current || getSecsLeft() <= 1) break;
+        const segment = segments[i];
+        // Use tighter pause for subsequent loops (coach repeating = faster pace)
+        const pauseMs = loopCount > 1
+          ? Math.max(FINISHER_PAUSE_MS, basePauseMs - 100)
+          : basePauseMs;
+        await playSegmentFallback(segment, pauseMs);
       }
     }
   };
@@ -347,13 +368,12 @@ export default function ActiveSessionScreen({ route, navigation }: Props) {
           await sleepMs((phase.duration - 5) * 1000);
 
         } else if (phase.roundIndex !== undefined) {
-          // Round or Finisher: play segments from plan
+          // Round: loop segments until phase timer expires
           const round = planRounds[phase.roundIndex];
           if (round) {
-            await playRound(round);
+            await playRoundLooped(round, () => phaseSecs, phase.roundIndex);
           }
-          // Fill remaining phase time with silence
-          // (audio may finish before phase duration)
+          // Safety: wait for remaining phase time if any
           while (phaseSecs > 1 && !abortRef.current) {
             await sleepMs(500);
           }

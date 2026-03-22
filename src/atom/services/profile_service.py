@@ -96,7 +96,11 @@ class ProfileService:
         return profile
 
     async def advance_program(self) -> ProgramProgress | None:
-        """Advance program progress to next day after session completion."""
+        """Advance program progress to next day after session completion.
+
+        When Day 7 completes, check if a next week exists for this level.
+        If not, cycle back to Day 1 of the same week (program loops).
+        """
         result = await self.session.execute(
             select(ProgramProgress).where(ProgramProgress.completed_at.is_(None))
         )
@@ -105,15 +109,34 @@ class ProfileService:
             return None
 
         if progress.current_day >= 7:
-            # Week complete — mark completed, create next week
+            # Check if next week templates exist
+            next_week = progress.week + 1
+            result = await self.session.execute(
+                select(ProgramDayTemplate).where(
+                    ProgramDayTemplate.level == progress.level,
+                    ProgramDayTemplate.week == next_week,
+                    ProgramDayTemplate.day_number == 1,
+                )
+            )
+            has_next_week = result.scalar_one_or_none() is not None
+
             from datetime import datetime, timezone
             progress.completed_at = datetime.now(timezone.utc)
-            # For now, stay on same level, increment week
-            new_progress = ProgramProgress(
-                level=progress.level,
-                week=progress.week + 1,
-                current_day=1,
-            )
+
+            if has_next_week:
+                # Advance to next week
+                new_progress = ProgramProgress(
+                    level=progress.level,
+                    week=next_week,
+                    current_day=1,
+                )
+            else:
+                # Cycle back to Day 1 of same week
+                new_progress = ProgramProgress(
+                    level=progress.level,
+                    week=progress.week,
+                    current_day=1,
+                )
             self.session.add(new_progress)
         else:
             progress.current_day += 1
@@ -153,10 +176,10 @@ class ProfileService:
         theme_desc = template.theme_description if template else ""
         coach_comment = template.coach_comment if template else "오늘도 화이팅!"
 
-        # Next day preview
-        next_day = progress.current_day + 1 if progress.current_day < 7 else None
+        # Next day preview (cycles back to Day 1 after Day 7)
         next_preview = None
-        if next_day:
+        if progress.current_day < 7:
+            next_day = progress.current_day + 1
             result = await self.session.execute(
                 select(ProgramDayTemplate).where(
                     ProgramDayTemplate.level == progress.level,
@@ -167,6 +190,18 @@ class ProfileService:
             next_template = result.scalar_one_or_none()
             if next_template:
                 next_preview = {"day_number": next_day, "theme": next_template.theme}
+        else:
+            # Day 7: preview Day 1 (cycle restart)
+            result = await self.session.execute(
+                select(ProgramDayTemplate).where(
+                    ProgramDayTemplate.level == progress.level,
+                    ProgramDayTemplate.week == progress.week,
+                    ProgramDayTemplate.day_number == 1,
+                )
+            )
+            next_template = result.scalar_one_or_none()
+            if next_template:
+                next_preview = {"day_number": 1, "theme": next_template.theme, "is_cycle_restart": True}
 
         return {
             "streak": streak,

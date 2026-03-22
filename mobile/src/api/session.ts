@@ -59,7 +59,7 @@ export interface TodayData {
   coach_comment: string;
   level: string;
   week: number;
-  next_day_preview: { day_number: number; theme: string } | null;
+  next_day_preview: { day_number: number; theme: string; is_cycle_restart?: boolean } | null;
 }
 
 export interface SessionSummary {

@@ -58,16 +58,20 @@ async def _seed_templates(session: AsyncSession) -> int:
 
 
 async def _seed_programs(session: AsyncSession) -> int:
-    """Seed program day templates if none exist."""
-    result = await session.execute(select(func.count()).select_from(ProgramDayTemplate))
-    existing = result.scalar() or 0
-    if existing > 0:
-        return 0
-
+    """Seed program day templates, adding any missing levels/days."""
     from atom.seed_programs import get_program_templates
+
+    # Check which (level, week, day_number) combos already exist
+    result = await session.execute(
+        select(ProgramDayTemplate.level, ProgramDayTemplate.week, ProgramDayTemplate.day_number)
+    )
+    existing = {(r[0], r[1], r[2]) for r in result.all()}
 
     count = 0
     for t in get_program_templates():
+        key = (t["level"], t["week"], t["day_number"])
+        if key in existing:
+            continue
         session.add(ProgramDayTemplate(**t))
         count += 1
 

@@ -123,10 +123,15 @@ export default function SessionEndScreen({ route, navigation }: Props) {
       {/* Next Day Preview */}
       {isCompleted && nextPreview ? (
         <Animated.View entering={FadeInDown.delay(1200)} style={styles.nextCard}>
-          <Text style={styles.nextLabel}>내일</Text>
+          <Text style={styles.nextLabel}>
+            {nextPreview.is_cycle_restart ? '다음 사이클' : '내일'}
+          </Text>
           <Text style={styles.nextText}>
             Day {nextPreview.day_number} — {nextPreview.theme}
           </Text>
+          {nextPreview.is_cycle_restart ? (
+            <Text style={styles.cycleNote}>프로그램을 다시 시작합니다</Text>
+          ) : null}
         </Animated.View>
       ) : null}
 
@@ -285,6 +290,11 @@ const styles = StyleSheet.create({
   nextText: {
     ...TYPOGRAPHY.CARD_TITLE,
     color: COLORS.TEXT_1,
+  },
+  cycleNote: {
+    ...TYPOGRAPHY.META,
+    color: COLORS.TEXT_3,
+    marginTop: 4,
   },
 
   // Actions
