@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, Pressable, StyleSheet, ActivityIndicator, Alert, Dimensions, GestureResponderEvent } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 import Animated, {
@@ -163,34 +163,49 @@ export default function HomeScreen({ navigation }: Props) {
     transform: [{ translateY: bottomTranslateY.value }],
   }));
 
-  const handlePress = () => {
+  const handlePress = (e: GestureResponderEvent) => {
+    // Determine punch direction from tap position
+    const tapX = e.nativeEvent.locationX;
+    const tapY = e.nativeEvent.locationY;
+    const centerX = BAG_WIDTH / 2;
+    const centerY = (BAG_HEIGHT + 50 + 28) / 2; // chains + collar + body
+
+    // Horizontal: tap left → bag goes right (positive), tap right → goes left
+    const offsetX = (centerX - tapX) / centerX; // -1 to 1
+    // Vertical: tap high → more rotation, tap low → less
+    const verticalFactor = Math.max(0.5, 1 - (tapY / (BAG_HEIGHT + 78)) * 0.5);
+
+    const directionX = offsetX * verticalFactor;
+    const intensity = Math.max(0.6, Math.min(1.2, Math.abs(offsetX) + 0.5));
+
     // Heavy impact haptic
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
-    // Squash on impact — bag deforms then bounces
+    // Squash on impact — deformation perpendicular to punch direction
     bagScaleX.value = withSequence(
-      withTiming(1.15, { duration: 50 }),
-      withTiming(0.93, { duration: 80 }),
-      withTiming(1.05, { duration: 80 }),
+      withTiming(1 + 0.15 * intensity, { duration: 50 }),
+      withTiming(1 - 0.07 * intensity, { duration: 80 }),
+      withTiming(1 + 0.04 * intensity, { duration: 80 }),
       withSpring(1, { damping: 8, stiffness: 150 }),
     );
     bagScaleY.value = withSequence(
-      withTiming(0.9, { duration: 50 }),
-      withTiming(1.05, { duration: 80 }),
-      withTiming(0.97, { duration: 80 }),
+      withTiming(1 - 0.1 * intensity, { duration: 50 }),
+      withTiming(1 + 0.05 * intensity, { duration: 80 }),
+      withTiming(1 - 0.03 * intensity, { duration: 80 }),
       withSpring(1, { damping: 8, stiffness: 150 }),
     );
 
-    // Swing: push back hard, then oscillate back and forth many times
-    // Low damping = lots of oscillation, like a real heavy bag
+    // Swing direction based on tap side
+    const swingTarget = directionX * 10 * intensity;
     bagSwing.value = withSequence(
-      withTiming(8, { duration: 80 }),
+      withTiming(swingTarget, { duration: 80 }),
       withSpring(0, { damping: 3, stiffness: 40, mass: 1.5 }),
     );
 
-    // Lateral translation synced with swing for more realistic arc
+    // Lateral translation matches swing direction
+    const translateTarget = directionX * 24 * intensity;
     bagTranslateX.value = withSequence(
-      withTiming(18, { duration: 80 }),
+      withTiming(translateTarget, { duration: 80 }),
       withSpring(0, { damping: 3, stiffness: 40, mass: 1.5 }),
     );
 
@@ -200,21 +215,21 @@ export default function HomeScreen({ navigation }: Props) {
       withTiming(0, { duration: 200 }),
     );
 
-    // Glow burst on impact
+    // Glow burst
     glowOpacity.value = withSequence(
       withTiming(0.9, { duration: 50 }),
       withTiming(0.3, { duration: 500 }),
     );
     glowScale.value = withSequence(
-      withTiming(1.4, { duration: 60 }),
+      withTiming(1.3 + 0.2 * intensity, { duration: 60 }),
       withSpring(1, { damping: 8, stiffness: 80 }),
     );
 
-    // Follow-through haptics for weight
+    // Follow-through haptics
     setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium), 60);
     setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light), 200);
 
-    // Navigate after oscillation plays
+    // Navigate after oscillation
     setTimeout(() => navigation.navigate('SessionPicker', { today }), 700);
   };
 
@@ -285,7 +300,7 @@ export default function HomeScreen({ navigation }: Props) {
         <Animated.View style={[styles.glowInner, glowStyle]} />
 
         <Animated.View style={[styles.bagAssembly, bagContainerStyle]}>
-          <TouchableOpacity style={styles.bagButton} onPress={handlePress} activeOpacity={1}>
+          <Pressable style={styles.bagButton} onPress={handlePress}>
             {/* Chains converging to top */}
             <View style={styles.chainArea}>
               <View style={[styles.chain, styles.chainL]} />
@@ -314,7 +329,7 @@ export default function HomeScreen({ navigation }: Props) {
 
             {/* Bottom rounded end */}
             <View style={styles.bagBottom} />
-          </TouchableOpacity>
+          </Pressable>
         </Animated.View>
       </View>
 
