@@ -177,8 +177,8 @@ export default function HomeScreen({ navigation }: Props) {
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
-    bagSwing.value = withSpring(0, { velocity: direction * force * 45, damping: 2.5, stiffness: 25, mass: 2 });
-    bagTranslateX.value = withSpring(0, { velocity: direction * force * 60, damping: 2.5, stiffness: 25, mass: 2 });
+    // Pendulum: rotation only (pivot at top), no lateral translate
+    bagSwing.value = withSpring(0, { velocity: direction * force * 90, damping: 2.5, stiffness: 25, mass: 2 });
 
     const sq = force * 0.12;
     bagScaleX.value = withSequence(withTiming(1 + sq, { duration: 40 }), withSpring(1, { damping: 6, stiffness: 120 }));
