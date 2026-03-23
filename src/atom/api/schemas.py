@@ -25,6 +25,7 @@ class ChunkResponse(BaseModel):
 class SegmentResponse(BaseModel):
     text: str              # full combo text e.g. "원투 슥 투훅투"
     chunks: list[ChunkResponse]
+    impact_actions: list[str] = []   # e.g. ["J", "C", "LH"]
 
 
 class TimestampResponse(BaseModel):

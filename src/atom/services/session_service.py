@@ -2,13 +2,31 @@
 
 from __future__ import annotations
 
+import json
 import random
+from pathlib import Path
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from atom.models.tables import DrillPlan, ProgramDayTemplate, ProgramProgress
 from atom.services.template_service import TemplateService
+
+# ── Combo call → action sequence lookup (loaded once at import) ──────
+_DICT_PATH = Path(__file__).parent.parent / "data" / "combo_dictionary.json"
+
+
+def _build_call_to_seq() -> dict[str, list[str]]:
+    with open(_DICT_PATH) as f:
+        data = json.load(f)
+    lookup: dict[str, list[str]] = {}
+    for level in ("basic", "intermediate", "advanced"):
+        for combo in data["combos"][level]:
+            lookup[combo["call"]] = combo["seq"]
+    return lookup
+
+
+_CALL_TO_SEQ = _build_call_to_seq()
 
 
 class SessionService:
@@ -106,7 +124,11 @@ class SessionService:
             for seg in shuffled:
                 text = seg["text"]
                 chunks = await template_svc._resolve_chunks(text, {})
-                round_segments.append({"text": text, "chunks": chunks})
+                round_segments.append({
+                    "text": text,
+                    "chunks": chunks,
+                    "impact_actions": _CALL_TO_SEQ.get(text, []),
+                })
 
             # Merge finisher segments into R3 (finisher stays in order)
             if round_num == 3:
@@ -114,7 +136,11 @@ class SessionService:
                 for seg in finisher_data["segments"]:
                     text = seg["text"]
                     chunks = await template_svc._resolve_chunks(text, {})
-                    round_segments.append({"text": text, "chunks": chunks})
+                    round_segments.append({
+                        "text": text,
+                        "chunks": chunks,
+                        "impact_actions": _CALL_TO_SEQ.get(text, []),
+                    })
 
             rounds_list.append({"round": round_num, "segments": round_segments})
 

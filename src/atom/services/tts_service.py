@@ -112,7 +112,7 @@ class TTSService:
             voice_settings=VoiceSettings(
                 stability=DEFAULT_STABILITY,
                 similarity_boost=DEFAULT_SIMILARITY,
-                style=0.0,
+                style=0.45,
                 use_speaker_boost=True,
                 speed=DEFAULT_SPEED,
             ),

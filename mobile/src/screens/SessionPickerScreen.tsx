@@ -7,11 +7,12 @@ import { generatePlan, TodayData, ProgramDaySummary } from '../api/session';
 type Props = NativeStackScreenProps<any, 'SessionPicker'>;
 
 export default function SessionPickerScreen({ route, navigation }: Props) {
-  const today = route.params?.today as TodayData;
+  const today = (route.params?.today as TodayData) ?? null;
   const [selectedDay, setSelectedDay] = useState<ProgramDaySummary | null>(null);
   const [starting, setStarting] = useState(false);
 
   useEffect(() => {
+    if (!today) return;
     const rec = today.program_days.find((d) => d.day_number === today.day_number) ?? null;
     setSelectedDay(rec);
   }, [today]);
@@ -41,9 +42,9 @@ export default function SessionPickerScreen({ route, navigation }: Props) {
         contentContainerStyle={styles.pickerRow}
         style={styles.pickerScroll}
       >
-        {today.program_days.map((day) => {
+        {(today?.program_days ?? []).map((day) => {
           const isSelected = selectedDay?.day_number === day.day_number;
-          const isRecommended = day.day_number === today.day_number;
+          const isRecommended = day.day_number === today?.day_number;
           return (
             <TouchableOpacity
               key={day.day_number}

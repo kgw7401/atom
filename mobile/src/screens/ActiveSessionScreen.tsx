@@ -14,6 +14,7 @@ import Animated, {
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { PlanResponse, Round, Segment } from '../api/session';
 import { useSettingsStore } from '../store/settingsStore';
+import { useImpactPlayer } from '../hooks/useImpactPlayer';
 import { COLORS, SPACING, TYPOGRAPHY } from '../theme';
 
 type Props = NativeStackScreenProps<any, 'ActiveSession'>;
@@ -63,6 +64,8 @@ export default function ActiveSessionScreen({ route, navigation }: Props) {
   const startedAtRef = useRef(new Date());
   const soundRef = useRef<Audio.Sound | null>(null);
 
+  const impactPlayer = useImpactPlayer();
+
   const timerScale = useSharedValue(1);
   const timerAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: timerScale.value }],
@@ -99,6 +102,7 @@ export default function ActiveSessionScreen({ route, navigation }: Props) {
     setPaused(next);
     if (next) {
       Speech.stop();
+      impactPlayer.cancelPending();
       if (soundRef.current) {
         try { await soundRef.current.pauseAsync(); } catch {}
       }
@@ -107,7 +111,7 @@ export default function ActiveSessionScreen({ route, navigation }: Props) {
         try { await soundRef.current.playAsync(); } catch {}
       }
     }
-  }, []);
+  }, [impactPlayer]);
 
   // ── Abort ──────────────────────────────────────────────────────────
   const handleAbort = () => {
@@ -116,6 +120,7 @@ export default function ActiveSessionScreen({ route, navigation }: Props) {
       { text: '중단', style: 'destructive', onPress: async () => {
         abortRef.current = true;
         Speech.stop();
+        impactPlayer.cancelPending();
         await stopSound();
       }},
     ]);
@@ -176,6 +181,13 @@ export default function ActiveSessionScreen({ route, navigation }: Props) {
         for (let j = timestamps.length - 1; j >= 0; j--) {
           if (pos >= timestamps[j].start_ms) {
             if (j !== lastSegIdx) {
+              // Fire impact SFX for the PREVIOUS segment (its execution gap starts now)
+              if (lastSegIdx >= 0) {
+                const prevSeg = round.segments?.[lastSegIdx];
+                if (prevSeg?.impact_actions?.length) {
+                  impactPlayer.playSequence(prevSeg.impact_actions);
+                }
+              }
               lastSegIdx = j;
               segmentsDeliveredRef.current++;
               setCurrentText(timestamps[j].text);
@@ -254,9 +266,17 @@ export default function ActiveSessionScreen({ route, navigation }: Props) {
         }
         if (i < segment.chunks.length - 1) await sleepMs(100);
       }
+      // Fire impact SFX during the execution pause (non-blocking)
+      if (segment.impact_actions?.length) {
+        impactPlayer.playSequence(segment.impact_actions);
+      }
       await sleepMs(pauseMs);
     } else {
       await speakAsync(segment.text);
+      // Fire impact SFX during the execution pause (non-blocking)
+      if (segment.impact_actions?.length) {
+        impactPlayer.playSequence(segment.impact_actions);
+      }
       await sleepMs(pauseMs);
     }
   };
@@ -315,6 +335,7 @@ export default function ActiveSessionScreen({ route, navigation }: Props) {
 
     const runSession = async () => {
       await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
+      await impactPlayer.preload();
       startedAtRef.current = new Date();
 
       let totalLeft = TOTAL_SESSION_SEC;
@@ -415,6 +436,7 @@ export default function ActiveSessionScreen({ route, navigation }: Props) {
       if (totalTimer) clearInterval(totalTimer);
       Speech.stop();
       stopSound();
+      impactPlayer.cleanup();
     };
   }, [sessionStarted]);
 

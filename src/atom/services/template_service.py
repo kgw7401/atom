@@ -18,6 +18,7 @@ AUDIO_DIR = Path("data/audio")
 
 _DICT_PATH = Path(__file__).parent.parent / "data" / "combo_dictionary.json"
 _assembly_cache: dict | None = None
+_call_to_seq_cache: dict[str, list[str]] | None = None
 
 
 def _load_assembly() -> dict:
@@ -33,9 +34,27 @@ def _load_assembly() -> dict:
     return _assembly_cache
 
 
+def _load_call_to_seq() -> dict[str, list[str]]:
+    """Load combo call → action sequence mapping (cached)."""
+    global _call_to_seq_cache
+    if _call_to_seq_cache is None:
+        with open(_DICT_PATH) as f:
+            data = json.load(f)
+        _call_to_seq_cache = {}
+        for level in ("basic", "intermediate", "advanced"):
+            for combo in data["combos"][level]:
+                _call_to_seq_cache[combo["call"]] = combo["seq"]
+    return _call_to_seq_cache
+
+
 class TemplateService:
     def __init__(self, session: AsyncSession):
         self.session = session
+
+    @staticmethod
+    def _get_impact_actions(text: str) -> list[str]:
+        """Return action sequence for a combo call text, e.g. '원투' → ['J','C']."""
+        return _load_call_to_seq().get(text, [])
 
     async def pick_template(self, level: str) -> SessionTemplate:
         """Pick a random template for the level, avoiding the last 3 used."""
@@ -92,7 +111,11 @@ class TemplateService:
             round_segments = []
             for text in sequence:
                 chunks = await self._resolve_chunks(text, assembly)
-                round_segments.append({"text": text, "chunks": chunks})
+                round_segments.append({
+                    "text": text,
+                    "chunks": chunks,
+                    "impact_actions": self._get_impact_actions(text),
+                })
 
             rounds_list.append({"round": r, "segments": round_segments})
 

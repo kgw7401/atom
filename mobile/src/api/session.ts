@@ -17,6 +17,7 @@ export interface Chunk {
 export interface Segment {
   text: string;           // full combo text e.g. "원투 슥 투훅투"
   chunks: Chunk[];
+  impact_actions?: string[];  // e.g. ["J", "C", "LH"]
 }
 
 export interface Timestamp {
