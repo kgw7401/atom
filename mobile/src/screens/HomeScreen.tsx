@@ -164,73 +164,74 @@ export default function HomeScreen({ navigation }: Props) {
   }));
 
   const handlePress = (e: GestureResponderEvent) => {
-    // Determine punch direction from tap position
     const tapX = e.nativeEvent.locationX;
     const tapY = e.nativeEvent.locationY;
     const centerX = BAG_WIDTH / 2;
-    const centerY = (BAG_HEIGHT + 50 + 28) / 2; // chains + collar + body
 
-    // Horizontal: tap left → bag goes right (positive), tap right → goes left
+    // Punch direction: tap left → force pushes right (positive), tap right → left
     const offsetX = (centerX - tapX) / centerX; // -1 to 1
-    // Vertical: tap high → more rotation, tap low → less
-    const verticalFactor = Math.max(0.5, 1 - (tapY / (BAG_HEIGHT + 78)) * 0.5);
+    // Higher tap = longer lever arm = more torque
+    const leverArm = Math.max(0.6, 1 - (tapY / (BAG_HEIGHT + 78)) * 0.4);
+    // Punch force scales with distance from center
+    const force = Math.max(0.5, Math.abs(offsetX) + 0.4) * leverArm;
+    const direction = Math.sign(offsetX) || 1;
 
-    const directionX = offsetX * verticalFactor;
-    const intensity = Math.max(0.6, Math.min(1.2, Math.abs(offsetX) + 0.5));
+    // ── Impulse velocity (no position tween — pure physics) ──
+    // Apply instant velocity, let spring physics handle oscillation
+    const swingVelocity = direction * force * 45;
+    const translateVelocity = direction * force * 60;
 
-    // Heavy impact haptic
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
-    // Squash on impact — deformation perpendicular to punch direction
+    // Rotation: impulse → pendulum oscillation with heavy mass
+    bagSwing.value = withSpring(0, {
+      velocity: swingVelocity,
+      damping: 2.5,
+      stiffness: 25,
+      mass: 2,
+    });
+
+    // Lateral: impulse → arc movement synced with rotation
+    bagTranslateX.value = withSpring(0, {
+      velocity: translateVelocity,
+      damping: 2.5,
+      stiffness: 25,
+      mass: 2,
+    });
+
+    // Squash on impact — quick deformation then spring settle
+    const squashForce = force * 0.12;
     bagScaleX.value = withSequence(
-      withTiming(1 + 0.15 * intensity, { duration: 50 }),
-      withTiming(1 - 0.07 * intensity, { duration: 80 }),
-      withTiming(1 + 0.04 * intensity, { duration: 80 }),
-      withSpring(1, { damping: 8, stiffness: 150 }),
+      withTiming(1 + squashForce, { duration: 40 }),
+      withSpring(1, { damping: 6, stiffness: 120 }),
     );
     bagScaleY.value = withSequence(
-      withTiming(1 - 0.1 * intensity, { duration: 50 }),
-      withTiming(1 + 0.05 * intensity, { duration: 80 }),
-      withTiming(1 - 0.03 * intensity, { duration: 80 }),
-      withSpring(1, { damping: 8, stiffness: 150 }),
-    );
-
-    // Swing direction based on tap side
-    const swingTarget = directionX * 10 * intensity;
-    bagSwing.value = withSequence(
-      withTiming(swingTarget, { duration: 80 }),
-      withSpring(0, { damping: 3, stiffness: 40, mass: 1.5 }),
-    );
-
-    // Lateral translation matches swing direction
-    const translateTarget = directionX * 24 * intensity;
-    bagTranslateX.value = withSequence(
-      withTiming(translateTarget, { duration: 80 }),
-      withSpring(0, { damping: 3, stiffness: 40, mass: 1.5 }),
+      withTiming(1 - squashForce * 0.8, { duration: 40 }),
+      withSpring(1, { damping: 6, stiffness: 120 }),
     );
 
     // Impact flash
     impactFlash.value = withSequence(
-      withTiming(0.7, { duration: 30 }),
+      withTiming(0.6 * force, { duration: 30 }),
       withTiming(0, { duration: 200 }),
     );
 
     // Glow burst
     glowOpacity.value = withSequence(
-      withTiming(0.9, { duration: 50 }),
-      withTiming(0.3, { duration: 500 }),
+      withTiming(0.8, { duration: 50 }),
+      withTiming(0.3, { duration: 600 }),
     );
     glowScale.value = withSequence(
-      withTiming(1.3 + 0.2 * intensity, { duration: 60 }),
+      withTiming(1.2 + 0.3 * force, { duration: 60 }),
       withSpring(1, { damping: 8, stiffness: 80 }),
     );
 
     // Follow-through haptics
     setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium), 60);
-    setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light), 200);
+    setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light), 250);
 
-    // Navigate after oscillation
-    setTimeout(() => navigation.navigate('SessionPicker', { today }), 700);
+    // Navigate after physics play out
+    setTimeout(() => navigation.navigate('SessionPicker', { today }), 800);
   };
 
   const handleLevelChange = () => {
