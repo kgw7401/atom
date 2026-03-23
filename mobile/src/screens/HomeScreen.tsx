@@ -1,7 +1,18 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withSequence,
+  withTiming,
+  withSpring,
+  withDelay,
+  Easing,
+  interpolate,
+} from 'react-native-reanimated';
 import { COLORS, TYPOGRAPHY, SPACING } from '../theme';
 import { fetchToday, TodayData } from '../api/session';
 import { updateProfile } from '../api/profile';
@@ -16,9 +27,91 @@ const LEVEL_LABELS: Record<string, string> = {
   advanced: '고급',
 };
 
+const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
+
 export default function HomeScreen({ navigation }: Props) {
   const [today, setToday] = useState<TodayData | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // ── Animations ──────────────────────────────────────────────────
+  const logoOpacity = useSharedValue(0);
+  const logoTranslateY = useSharedValue(-20);
+  const bagSwing = useSharedValue(0);
+  const bagScale = useSharedValue(0);
+  const glowOpacity = useSharedValue(0.3);
+  const bottomOpacity = useSharedValue(0);
+
+  useEffect(() => {
+    // Logo fade-in from top
+    logoOpacity.value = withDelay(200, withTiming(1, { duration: 600 }));
+    logoTranslateY.value = withDelay(200, withTiming(0, { duration: 600, easing: Easing.out(Easing.cubic) }));
+
+    // Bag entrance: scale up with spring
+    bagScale.value = withDelay(500, withSpring(1, { damping: 12, stiffness: 100 }));
+
+    // Idle sway: gentle pendulum (starts after entrance)
+    bagSwing.value = withDelay(1200,
+      withRepeat(
+        withSequence(
+          withTiming(1, { duration: 2400, easing: Easing.inOut(Easing.sin) }),
+          withTiming(-1, { duration: 2400, easing: Easing.inOut(Easing.sin) }),
+        ),
+        -1, // infinite
+        true,
+      )
+    );
+
+    // Glow pulse
+    glowOpacity.value = withDelay(800,
+      withRepeat(
+        withSequence(
+          withTiming(0.6, { duration: 2000, easing: Easing.inOut(Easing.sin) }),
+          withTiming(0.2, { duration: 2000, easing: Easing.inOut(Easing.sin) }),
+        ),
+        -1,
+        true,
+      )
+    );
+
+    // Bottom badges fade in
+    bottomOpacity.value = withDelay(900, withTiming(1, { duration: 500 }));
+  }, []);
+
+  const logoStyle = useAnimatedStyle(() => ({
+    opacity: logoOpacity.value,
+    transform: [{ translateY: logoTranslateY.value }],
+  }));
+
+  const bagContainerStyle = useAnimatedStyle(() => {
+    const rotate = interpolate(bagSwing.value, [-1, 1], [-1.5, 1.5]);
+    return {
+      transform: [
+        { scale: bagScale.value },
+        { rotate: `${rotate}deg` },
+      ],
+    };
+  });
+
+  const glowStyle = useAnimatedStyle(() => ({
+    opacity: glowOpacity.value,
+  }));
+
+  const bottomStyle = useAnimatedStyle(() => ({
+    opacity: bottomOpacity.value,
+  }));
+
+  // ── Tap handler with press animation ────────────────────────────
+  const handlePress = () => {
+    // Quick punch reaction: squish then spring back
+    bagScale.value = withSequence(
+      withTiming(0.92, { duration: 80 }),
+      withSpring(1, { damping: 8, stiffness: 200 }),
+    );
+    // Navigate after brief delay for visual feedback
+    setTimeout(() => {
+      navigation.navigate('SessionPicker', { today });
+    }, 150);
+  };
 
   const handleLevelChange = () => {
     const raw = today?.level ?? 'beginner';
@@ -70,42 +163,44 @@ export default function HomeScreen({ navigation }: Props) {
   return (
     <View style={styles.container}>
       {/* Logo */}
-      <Text style={styles.logo}>ATOM</Text>
+      <Animated.Text style={[styles.logo, logoStyle]}>ATOM</Animated.Text>
 
-      {/* Center: Punching Bag Button */}
+      {/* Center: Punching Bag */}
       <View style={styles.center}>
-        <TouchableOpacity
-          style={styles.bagButton}
-          onPress={() => navigation.navigate('SessionPicker', { today })}
-          activeOpacity={0.8}
-        >
-          {/* Ceiling mount bracket */}
-          <View style={styles.mountPlate} />
-          <View style={styles.mountBolt} />
-          {/* Chains — two angled + center */}
-          <View style={styles.chainGroup}>
-            <View style={[styles.chain, styles.chainLeft]} />
-            <View style={[styles.chain, styles.chainCenter]} />
-            <View style={[styles.chain, styles.chainRight]} />
-          </View>
-          {/* Swivel ring */}
-          <View style={styles.swivel} />
-          {/* Bag body */}
-          <View style={styles.bagBody}>
-            {/* Top cap (leather collar) */}
-            <View style={styles.bagCap} />
-            {/* Highlight strip for 3D depth */}
-            <View style={styles.bagHighlight} />
-            {/* Center seam */}
-            <View style={styles.bagSeam} />
-          </View>
-          {/* Bottom cap */}
-          <View style={styles.bagBottom} />
-        </TouchableOpacity>
+        {/* Glow behind bag */}
+        <Animated.View style={[styles.glow, glowStyle]} />
+
+        <Animated.View style={[styles.bagAssembly, bagContainerStyle]}>
+          <TouchableOpacity
+            style={styles.bagButton}
+            onPress={handlePress}
+            activeOpacity={1}
+          >
+            {/* Mount */}
+            <View style={styles.mountPlate} />
+            <View style={styles.mountBolt} />
+            {/* Chains */}
+            <View style={styles.chainGroup}>
+              <View style={[styles.chain, styles.chainLeft]} />
+              <View style={[styles.chain, styles.chainCenter]} />
+              <View style={[styles.chain, styles.chainRight]} />
+            </View>
+            {/* Swivel */}
+            <View style={styles.swivel} />
+            {/* Bag body */}
+            <View style={styles.bagBody}>
+              <View style={styles.bagCap} />
+              <View style={styles.bagHighlight} />
+              <View style={styles.bagSeam} />
+            </View>
+            {/* Bottom cap */}
+            <View style={styles.bagBottom} />
+          </TouchableOpacity>
+        </Animated.View>
       </View>
 
       {/* Bottom info */}
-      <View style={styles.bottomRow}>
+      <Animated.View style={[styles.bottomRow, bottomStyle]}>
         <TouchableOpacity style={styles.levelBadge} onPress={handleLevelChange}>
           <Text style={styles.levelText}>
             {LEVEL_LABELS[today?.level ?? 'beginner']}
@@ -116,15 +211,15 @@ export default function HomeScreen({ navigation }: Props) {
             <Text style={styles.streakText}>{streak}일 연속</Text>
           </View>
         )}
-      </View>
+      </Animated.View>
     </View>
   );
 }
 
 const BAG_WIDTH = 90;
 const BAG_HEIGHT = 200;
-const BAG_COLOR = '#8B1A1A';       // dark oxblood leather
-const BAG_HIGHLIGHT = '#A52222';   // lighter leather highlight
+const BAG_COLOR = '#8B1A1A';
+const BAG_HIGHLIGHT = '#A52222';
 
 const styles = StyleSheet.create({
   container: {
@@ -144,6 +239,18 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  glow: {
+    position: 'absolute',
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: COLORS.RED,
+  },
+  bagAssembly: {
+    alignItems: 'center',
+    // Pivot from top (mount point)
+    transformOrigin: 'top center',
   },
   bagButton: {
     alignItems: 'center',
