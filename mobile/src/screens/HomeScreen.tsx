@@ -274,61 +274,34 @@ export default function HomeScreen({ navigation }: Props) {
 
         <Animated.View style={[styles.bagAssembly, bagContainerStyle]}>
           <TouchableOpacity style={styles.bagButton} onPress={handlePress} activeOpacity={1}>
-            {/* Mount bracket */}
-            <View style={styles.mountPlate}>
-              <View style={styles.mountRidge} />
-            </View>
-            <View style={styles.mountBolt} />
-
-            {/* Chains */}
-            <View style={styles.chainGroup}>
-              <View style={[styles.chain, styles.chainLeft]} />
-              <View style={[styles.chain, styles.chainCenter]} />
-              <View style={[styles.chain, styles.chainRight]} />
+            {/* Chains converging to top */}
+            <View style={styles.chainArea}>
+              <View style={[styles.chain, styles.chainL]} />
+              <View style={[styles.chain, styles.chainR]} />
             </View>
 
-            {/* Swivel */}
-            <View style={styles.swivel} />
+            {/* Black top collar with straps */}
+            <View style={styles.collar}>
+              <View style={styles.collarStrapL} />
+              <View style={styles.collarStrapR} />
+              <View style={styles.collarBand} />
+            </View>
 
-            {/* Bag body */}
+            {/* Bag body — cylinder */}
             <View style={styles.bagBody}>
-              {/* Impact flash overlay */}
+              {/* Impact flash */}
               <Animated.View style={[styles.impactFlash, impactFlashStyle]} />
-              {/* Collar with rivets */}
-              <View style={styles.bagCollar}>
-                <View style={styles.collarStrap} />
-                <View style={[styles.rivet, { left: 14 }]} />
-                <View style={[styles.rivet, { left: BAG_WIDTH / 2 - 3 }]} />
-                <View style={[styles.rivet, { right: 14 }]} />
-              </View>
-              {/* Panel dividers (4-panel look) */}
-              <View style={[styles.panelLine, { left: BAG_WIDTH * 0.28 }]} />
-              <View style={[styles.panelLine, { left: BAG_WIDTH * 0.5 }]} />
-              <View style={[styles.panelLine, { left: BAG_WIDTH * 0.72 }]} />
-              {/* Stitch lines along panels */}
-              <View style={[styles.stitchLine, { left: BAG_WIDTH * 0.28 - 3 }]} />
-              <View style={[styles.stitchLine, { left: BAG_WIDTH * 0.28 + 2 }]} />
-              <View style={[styles.stitchLine, { left: BAG_WIDTH * 0.72 - 3 }]} />
-              <View style={[styles.stitchLine, { left: BAG_WIDTH * 0.72 + 2 }]} />
-              {/* Highlight strips (leather sheen) */}
-              <View style={styles.sheen1} />
-              <View style={styles.sheen2} />
-              {/* Right shadow for roundness */}
-              <View style={styles.bagShadowR} />
-              {/* Brand patch */}
-              <View style={styles.brandPatch}>
-                <Text style={styles.brandText}>ATOM</Text>
-              </View>
+              {/* Shading: left highlight → center → right shadow */}
+              <View style={styles.highlightEdge} />
+              <View style={styles.highlightMain} />
+              <View style={styles.shadowMid} />
+              <View style={styles.shadowEdge} />
+              {/* Subtle vertical seam */}
+              <View style={styles.seam} />
             </View>
 
-            {/* Bottom cap with D-ring */}
-            <View style={styles.bagBottom}>
-              <View style={styles.bottomStrap} />
-              <View style={[styles.rivetSmall, { left: 10 }]} />
-              <View style={[styles.rivetSmall, { right: 10 }]} />
-            </View>
-            {/* D-ring */}
-            <View style={styles.dRing} />
+            {/* Bottom rounded end */}
+            <View style={styles.bagBottom} />
           </TouchableOpacity>
         </Animated.View>
       </View>
@@ -350,11 +323,12 @@ export default function HomeScreen({ navigation }: Props) {
   );
 }
 
-const BAG_WIDTH = 120;
-const BAG_HEIGHT = 280;
-const BAG_COLOR = '#8B1A1A';
-const BAG_DARK = '#6B1414';
-const BAG_DARKER = '#4a1010';
+const BAG_WIDTH = 110;
+const BAG_HEIGHT = 300;
+const BAG_RED = '#B5332E';      // main leather red (like reference)
+const BAG_RED_LIGHT = '#D04540'; // highlight
+const BAG_RED_DARK = '#7A2220';  // shadow
+const COLLAR_COLOR = '#1a1a1a'; // black leather collar
 
 const styles = StyleSheet.create({
   container: {
@@ -403,61 +377,68 @@ const styles = StyleSheet.create({
   bagButton: {
     alignItems: 'center',
   },
-  mountPlate: {
-    width: 56,
-    height: 8,
-    backgroundColor: '#3a3a3a',
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  mountRidge: {
-    position: 'absolute',
-    top: 3,
-    left: 0,
-    right: 0,
-    height: 1,
-    backgroundColor: '#4a4a4a',
-  },
-  mountBolt: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#4a4a4a',
-    borderWidth: 1,
-    borderColor: '#5a5a5a',
-    marginTop: -2,
-  },
-  chainGroup: {
-    width: 50,
-    height: 36,
+  // ── Chains ──
+  chainArea: {
+    width: BAG_WIDTH,
+    height: 50,
     position: 'relative',
   },
   chain: {
     position: 'absolute',
-    width: 2,
-    height: 36,
-    backgroundColor: '#5a5a5a',
+    width: 3,
+    backgroundColor: '#3d3d3d',
+    borderRadius: 1.5,
+  },
+  chainL: {
     top: 0,
+    left: BAG_WIDTH / 2 - 1.5,
+    height: 50,
+    transform: [{ rotate: '14deg' }],
+    transformOrigin: 'top center',
   },
-  chainLeft: {
-    left: 5,
-    transform: [{ rotate: '10deg' }],
+  chainR: {
+    top: 0,
+    right: BAG_WIDTH / 2 - 1.5,
+    height: 50,
+    transform: [{ rotate: '-14deg' }],
+    transformOrigin: 'top center',
   },
-  chainCenter: {
-    left: 24,
+  // ── Black collar ──
+  collar: {
+    width: BAG_WIDTH + 4,
+    height: 28,
+    backgroundColor: COLLAR_COLOR,
+    borderRadius: 6,
+    marginTop: -4,
+    zIndex: 2,
+    overflow: 'hidden',
   },
-  chainRight: {
-    right: 5,
-    transform: [{ rotate: '-10deg' }],
+  collarStrapL: {
+    position: 'absolute',
+    top: -10,
+    left: BAG_WIDTH * 0.3,
+    width: 12,
+    height: 24,
+    backgroundColor: '#2a2a2a',
+    transform: [{ rotate: '5deg' }],
   },
-  swivel: {
-    width: 16,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#4a4a4a',
-    borderWidth: 1,
-    borderColor: '#5a5a5a',
-    marginBottom: 2,
+  collarStrapR: {
+    position: 'absolute',
+    top: -10,
+    right: BAG_WIDTH * 0.3,
+    width: 12,
+    height: 24,
+    backgroundColor: '#2a2a2a',
+    transform: [{ rotate: '-5deg' }],
+  },
+  collarBand: {
+    position: 'absolute',
+    bottom: 4,
+    left: 6,
+    right: 6,
+    height: 3,
+    backgroundColor: '#333',
+    borderRadius: 1.5,
   },
   // ── Impact flash ──
   impactFlash: {
@@ -467,158 +448,70 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     backgroundColor: '#fff',
-    borderRadius: BAG_WIDTH / 2.3,
     zIndex: 10,
   },
-  // ── Bag body ──
+  // ── Bag body (cylinder) ──
   bagBody: {
     width: BAG_WIDTH,
     height: BAG_HEIGHT,
-    backgroundColor: BAG_COLOR,
-    borderTopLeftRadius: BAG_WIDTH / 2.3,
-    borderTopRightRadius: BAG_WIDTH / 2.3,
-    borderBottomLeftRadius: BAG_WIDTH / 2.8,
-    borderBottomRightRadius: BAG_WIDTH / 2.8,
+    backgroundColor: BAG_RED,
     overflow: 'hidden',
-    // Subtle border for edge definition
-    borderWidth: 0.5,
-    borderColor: '#5a1010',
+    marginTop: -2,
   },
-  bagCollar: {
-    width: BAG_WIDTH,
-    height: 20,
-    backgroundColor: BAG_DARK,
-    borderBottomWidth: 2,
-    borderBottomColor: BAG_DARKER,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  collarStrap: {
+  highlightEdge: {
     position: 'absolute',
-    top: 8,
-    left: 12,
-    right: 12,
-    height: 3,
-    backgroundColor: BAG_DARKER,
-    borderRadius: 1.5,
+    left: 0,
+    top: 0,
+    width: BAG_WIDTH * 0.12,
+    height: BAG_HEIGHT,
+    backgroundColor: BAG_RED_DARK,
+    opacity: 0.4,
   },
-  rivet: {
+  highlightMain: {
     position: 'absolute',
-    top: 6,
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#6a6a6a',
-    borderWidth: 0.5,
-    borderColor: '#888',
-  },
-  rivetSmall: {
-    position: 'absolute',
-    top: 4,
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#5a5a5a',
-    borderWidth: 0.5,
-    borderColor: '#777',
-  },
-  panelLine: {
-    position: 'absolute',
-    top: 22,
-    width: 1.5,
-    height: BAG_HEIGHT - 46,
-    backgroundColor: '#6a1515',
-    opacity: 0.5,
-  },
-  stitchLine: {
-    position: 'absolute',
-    top: 24,
-    width: 0.5,
-    height: BAG_HEIGHT - 50,
-    backgroundColor: '#9a3030',
+    left: BAG_WIDTH * 0.18,
+    top: 0,
+    width: BAG_WIDTH * 0.22,
+    height: BAG_HEIGHT,
+    backgroundColor: BAG_RED_LIGHT,
     opacity: 0.25,
   },
-  sheen1: {
+  shadowMid: {
     position: 'absolute',
-    left: BAG_WIDTH * 0.15,
-    top: 28,
-    width: 10,
-    height: BAG_HEIGHT - 65,
-    backgroundColor: '#B03030',
-    borderRadius: 5,
+    right: BAG_WIDTH * 0.12,
+    top: 0,
+    width: BAG_WIDTH * 0.2,
+    height: BAG_HEIGHT,
+    backgroundColor: BAG_RED_DARK,
+    opacity: 0.2,
+  },
+  shadowEdge: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    width: BAG_WIDTH * 0.14,
+    height: BAG_HEIGHT,
+    backgroundColor: '#4a1515',
+    opacity: 0.5,
+  },
+  seam: {
+    position: 'absolute',
+    left: BAG_WIDTH / 2 - 0.5,
+    top: 0,
+    width: 1,
+    height: BAG_HEIGHT,
+    backgroundColor: BAG_RED_DARK,
     opacity: 0.3,
   },
-  sheen2: {
-    position: 'absolute',
-    left: BAG_WIDTH * 0.35,
-    top: 35,
-    width: 6,
-    height: BAG_HEIGHT * 0.5,
-    backgroundColor: '#C04040',
-    borderRadius: 3,
-    opacity: 0.12,
-  },
-  bagShadowR: {
-    position: 'absolute',
-    right: BAG_WIDTH * 0.08,
-    top: 28,
-    width: 22,
-    height: BAG_HEIGHT - 60,
-    backgroundColor: '#3a0808',
-    borderRadius: 11,
-    opacity: 0.3,
-  },
-  brandPatch: {
-    position: 'absolute',
-    top: BAG_HEIGHT * 0.4,
-    left: BAG_WIDTH * 0.22,
-    right: BAG_WIDTH * 0.22,
-    height: 32,
-    backgroundColor: BAG_DARK,
-    borderRadius: 4,
-    borderWidth: 0.5,
-    borderColor: BAG_DARKER,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  brandText: {
-    fontSize: 11,
-    fontWeight: '900',
-    letterSpacing: 4,
-    color: '#9a3535',
-    opacity: 0.7,
-  },
-  // ── Bottom cap ──
+  // ── Bottom ──
   bagBottom: {
-    width: BAG_WIDTH * 0.6,
-    height: 16,
-    backgroundColor: BAG_DARK,
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-    alignSelf: 'center',
-    marginTop: -2,
-    borderWidth: 0.5,
-    borderTopWidth: 0,
-    borderColor: BAG_DARKER,
-  },
-  bottomStrap: {
-    position: 'absolute',
-    top: 5,
-    left: 8,
-    right: 8,
-    height: 2.5,
-    backgroundColor: BAG_DARKER,
-    borderRadius: 1,
-  },
-  dRing: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    borderWidth: 2,
-    borderColor: '#5a5a5a',
-    backgroundColor: 'transparent',
-    alignSelf: 'center',
-    marginTop: 2,
+    width: BAG_WIDTH,
+    height: BAG_WIDTH / 2,
+    backgroundColor: BAG_RED,
+    borderBottomLeftRadius: BAG_WIDTH / 2,
+    borderBottomRightRadius: BAG_WIDTH / 2,
+    marginTop: -1,
+    overflow: 'hidden',
   },
   // ── Bottom row ──
   bottomRow: {
