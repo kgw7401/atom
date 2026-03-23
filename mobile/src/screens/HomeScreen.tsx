@@ -245,26 +245,41 @@ export default function HomeScreen({ navigation }: Props) {
 
             {/* Bag body */}
             <View style={styles.bagBody}>
-              {/* Top collar with strap detail */}
+              {/* Collar with rivets */}
               <View style={styles.bagCollar}>
                 <View style={styles.collarStrap} />
+                <View style={[styles.rivet, { left: 14 }]} />
+                <View style={[styles.rivet, { left: BAG_WIDTH / 2 - 3 }]} />
+                <View style={[styles.rivet, { right: 14 }]} />
               </View>
-              {/* Left highlight (3D depth) */}
-              <View style={styles.bagHighlightL} />
-              {/* Right shadow */}
+              {/* Panel dividers (4-panel look) */}
+              <View style={[styles.panelLine, { left: BAG_WIDTH * 0.28 }]} />
+              <View style={[styles.panelLine, { left: BAG_WIDTH * 0.5 }]} />
+              <View style={[styles.panelLine, { left: BAG_WIDTH * 0.72 }]} />
+              {/* Stitch lines along panels */}
+              <View style={[styles.stitchLine, { left: BAG_WIDTH * 0.28 - 3 }]} />
+              <View style={[styles.stitchLine, { left: BAG_WIDTH * 0.28 + 2 }]} />
+              <View style={[styles.stitchLine, { left: BAG_WIDTH * 0.72 - 3 }]} />
+              <View style={[styles.stitchLine, { left: BAG_WIDTH * 0.72 + 2 }]} />
+              {/* Highlight strips (leather sheen) */}
+              <View style={styles.sheen1} />
+              <View style={styles.sheen2} />
+              {/* Right shadow for roundness */}
               <View style={styles.bagShadowR} />
-              {/* Center seam */}
-              <View style={styles.bagSeam} />
-              {/* Brand area */}
-              <View style={styles.brandArea}>
-                <View style={styles.brandLine} />
+              {/* Brand patch */}
+              <View style={styles.brandPatch}>
+                <Text style={styles.brandText}>ATOM</Text>
               </View>
             </View>
 
-            {/* Bottom cap */}
+            {/* Bottom cap with D-ring */}
             <View style={styles.bagBottom}>
               <View style={styles.bottomStrap} />
+              <View style={[styles.rivetSmall, { left: 10 }]} />
+              <View style={[styles.rivetSmall, { right: 10 }]} />
             </View>
+            {/* D-ring */}
+            <View style={styles.dRing} />
           </TouchableOpacity>
         </Animated.View>
       </View>
@@ -405,87 +420,145 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: BAG_WIDTH / 2.8,
     borderBottomRightRadius: BAG_WIDTH / 2.8,
     overflow: 'hidden',
+    // Subtle border for edge definition
+    borderWidth: 0.5,
+    borderColor: '#5a1010',
   },
   bagCollar: {
     width: BAG_WIDTH,
-    height: 18,
+    height: 20,
     backgroundColor: BAG_DARK,
     borderBottomWidth: 2,
     borderBottomColor: BAG_DARKER,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   collarStrap: {
     position: 'absolute',
-    top: 7,
-    left: 10,
-    right: 10,
-    height: 2,
+    top: 8,
+    left: 12,
+    right: 12,
+    height: 3,
     backgroundColor: BAG_DARKER,
-    borderRadius: 1,
+    borderRadius: 1.5,
   },
-  bagHighlightL: {
+  rivet: {
     position: 'absolute',
-    left: BAG_WIDTH * 0.18,
-    top: 26,
-    width: 14,
-    height: BAG_HEIGHT - 60,
-    backgroundColor: '#A52222',
-    borderRadius: 7,
-    opacity: 0.35,
+    top: 6,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#6a6a6a',
+    borderWidth: 0.5,
+    borderColor: '#888',
+  },
+  rivetSmall: {
+    position: 'absolute',
+    top: 4,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#5a5a5a',
+    borderWidth: 0.5,
+    borderColor: '#777',
+  },
+  panelLine: {
+    position: 'absolute',
+    top: 22,
+    width: 1.5,
+    height: BAG_HEIGHT - 46,
+    backgroundColor: '#6a1515',
+    opacity: 0.5,
+  },
+  stitchLine: {
+    position: 'absolute',
+    top: 24,
+    width: 0.5,
+    height: BAG_HEIGHT - 50,
+    backgroundColor: '#9a3030',
+    opacity: 0.25,
+  },
+  sheen1: {
+    position: 'absolute',
+    left: BAG_WIDTH * 0.15,
+    top: 28,
+    width: 10,
+    height: BAG_HEIGHT - 65,
+    backgroundColor: '#B03030',
+    borderRadius: 5,
+    opacity: 0.3,
+  },
+  sheen2: {
+    position: 'absolute',
+    left: BAG_WIDTH * 0.35,
+    top: 35,
+    width: 6,
+    height: BAG_HEIGHT * 0.5,
+    backgroundColor: '#C04040',
+    borderRadius: 3,
+    opacity: 0.12,
   },
   bagShadowR: {
     position: 'absolute',
-    right: BAG_WIDTH * 0.12,
-    top: 30,
-    width: 18,
-    height: BAG_HEIGHT - 70,
-    backgroundColor: '#5a1010',
-    borderRadius: 9,
-    opacity: 0.25,
+    right: BAG_WIDTH * 0.08,
+    top: 28,
+    width: 22,
+    height: BAG_HEIGHT - 60,
+    backgroundColor: '#3a0808',
+    borderRadius: 11,
+    opacity: 0.3,
   },
-  bagSeam: {
+  brandPatch: {
     position: 'absolute',
-    left: BAG_WIDTH / 2 - 0.5,
-    top: 20,
-    width: 1,
-    height: BAG_HEIGHT - 44,
-    backgroundColor: '#6a1818',
-    opacity: 0.5,
-  },
-  brandArea: {
-    position: 'absolute',
-    top: BAG_HEIGHT * 0.38,
-    left: BAG_WIDTH * 0.3,
-    right: BAG_WIDTH * 0.3,
-    height: 30,
+    top: BAG_HEIGHT * 0.4,
+    left: BAG_WIDTH * 0.22,
+    right: BAG_WIDTH * 0.22,
+    height: 32,
+    backgroundColor: BAG_DARK,
+    borderRadius: 4,
+    borderWidth: 0.5,
+    borderColor: BAG_DARKER,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  brandLine: {
-    width: '80%',
-    height: 1.5,
-    backgroundColor: BAG_DARK,
-    borderRadius: 1,
-    opacity: 0.6,
+  brandText: {
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 4,
+    color: '#9a3535',
+    opacity: 0.7,
   },
   // ── Bottom cap ──
   bagBottom: {
-    width: BAG_WIDTH * 0.65,
-    height: 14,
+    width: BAG_WIDTH * 0.6,
+    height: 16,
     backgroundColor: BAG_DARK,
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
     alignSelf: 'center',
     marginTop: -2,
-    overflow: 'hidden',
+    borderWidth: 0.5,
+    borderTopWidth: 0,
+    borderColor: BAG_DARKER,
   },
   bottomStrap: {
     position: 'absolute',
     top: 5,
     left: 8,
     right: 8,
-    height: 2,
+    height: 2.5,
     backgroundColor: BAG_DARKER,
     borderRadius: 1,
+  },
+  dRing: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    borderWidth: 2,
+    borderColor: '#5a5a5a',
+    backgroundColor: 'transparent',
+    alignSelf: 'center',
+    marginTop: 2,
   },
   // ── Bottom row ──
   bottomRow: {
