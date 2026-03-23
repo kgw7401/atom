@@ -104,18 +104,20 @@ export default function HomeScreen({ navigation }: Props) {
   useEffect(() => {
     let mounted = true;
     (async () => {
+      await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
       for (const asset of IMPACT_SFX) {
         try {
           const { sound } = await Audio.Sound.createAsync(asset, { shouldPlay: false });
           if (mounted) impactSounds.current.push(sound);
-        } catch {}
+        } catch (e) { console.warn('Impact SFX load failed:', e); }
       }
       for (const asset of CHAIN_SFX) {
         try {
           const { sound } = await Audio.Sound.createAsync(asset, { shouldPlay: false });
           if (mounted) chainSounds.current.push(sound);
-        } catch {}
+        } catch (e) { console.warn('Chain SFX load failed:', e); }
       }
+      console.log(`[HomeScreen] Loaded ${impactSounds.current.length} impact + ${chainSounds.current.length} chain sounds`);
     })();
     return () => {
       mounted = false;
@@ -126,12 +128,12 @@ export default function HomeScreen({ navigation }: Props) {
 
   const playImpactSfx = useCallback(async () => {
     const sounds = impactSounds.current;
-    if (sounds.length === 0) return;
+    if (sounds.length === 0) { console.warn('[HomeScreen] No impact sounds loaded'); return; }
     const hit = sounds[Math.floor(Math.random() * sounds.length)];
     try {
       await hit.setPositionAsync(0);
       await hit.playAsync();
-    } catch {}
+    } catch (e) { console.warn('Impact play failed:', e); }
     // Chain rattle after a short delay
     const chains = chainSounds.current;
     if (chains.length > 0) {
