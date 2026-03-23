@@ -13,6 +13,7 @@ import Animated, {
   Easing,
   interpolate,
 } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 import { COLORS, TYPOGRAPHY, SPACING } from '../theme';
 import { fetchToday, TodayData } from '../api/session';
 import { updateProfile } from '../api/profile';
@@ -80,6 +81,9 @@ export default function HomeScreen({ navigation }: Props) {
   const logoTranslateY = useSharedValue(-30);
   const bagSwing = useSharedValue(0);
   const bagScale = useSharedValue(0);
+  const bagScaleX = useSharedValue(1);
+  const bagScaleY = useSharedValue(1);
+  const impactFlash = useSharedValue(0);
   const glowOpacity = useSharedValue(0);
   const glowScale = useSharedValue(0.8);
   const bottomOpacity = useSharedValue(0);
@@ -132,14 +136,20 @@ export default function HomeScreen({ navigation }: Props) {
   }));
 
   const bagContainerStyle = useAnimatedStyle(() => {
-    const rotate = interpolate(bagSwing.value, [-1, 1], [-1.8, 1.8]);
+    const rotate = bagSwing.value * 1.8;
     return {
       transform: [
         { scale: bagScale.value },
+        { scaleX: bagScaleX.value },
+        { scaleY: bagScaleY.value },
         { rotate: `${rotate}deg` },
       ],
     };
   });
+
+  const impactFlashStyle = useAnimatedStyle(() => ({
+    opacity: impactFlash.value,
+  }));
 
   const glowStyle = useAnimatedStyle(() => ({
     opacity: glowOpacity.value,
@@ -152,11 +162,48 @@ export default function HomeScreen({ navigation }: Props) {
   }));
 
   const handlePress = () => {
-    bagScale.value = withSequence(
-      withTiming(0.9, { duration: 80 }),
-      withSpring(1, { damping: 8, stiffness: 200 }),
+    // Heavy impact haptic
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+
+    // Squash: bag compresses horizontally, stretches wide on impact
+    bagScaleX.value = withSequence(
+      withTiming(1.12, { duration: 60 }),                         // squash wide
+      withTiming(0.94, { duration: 100 }),                        // bounce narrow
+      withSpring(1, { damping: 10, stiffness: 180 }),             // settle
     );
-    setTimeout(() => navigation.navigate('SessionPicker', { today }), 150);
+    bagScaleY.value = withSequence(
+      withTiming(0.92, { duration: 60 }),                         // compress short
+      withTiming(1.04, { duration: 100 }),                        // stretch tall
+      withSpring(1, { damping: 10, stiffness: 180 }),             // settle
+    );
+
+    // Recoil swing: bag swings back from punch, then oscillates
+    bagSwing.value = withSequence(
+      withTiming(6, { duration: 100 }),                           // punch pushes bag back
+      withSpring(0, { damping: 6, stiffness: 60, mass: 1.2 }),   // pendulum dampening
+    );
+
+    // Impact flash
+    impactFlash.value = withSequence(
+      withTiming(0.8, { duration: 40 }),
+      withTiming(0, { duration: 300 }),
+    );
+
+    // Glow burst on impact
+    glowOpacity.value = withSequence(
+      withTiming(0.9, { duration: 60 }),
+      withTiming(0.3, { duration: 400 }),
+    );
+    glowScale.value = withSequence(
+      withTiming(1.3, { duration: 80 }),
+      withSpring(1, { damping: 10, stiffness: 100 }),
+    );
+
+    // Second haptic for weight feel
+    setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium), 80);
+
+    // Navigate after impact animation plays
+    setTimeout(() => navigation.navigate('SessionPicker', { today }), 500);
   };
 
   const handleLevelChange = () => {
@@ -245,6 +292,8 @@ export default function HomeScreen({ navigation }: Props) {
 
             {/* Bag body */}
             <View style={styles.bagBody}>
+              {/* Impact flash overlay */}
+              <Animated.View style={[styles.impactFlash, impactFlashStyle]} />
               {/* Collar with rivets */}
               <View style={styles.bagCollar}>
                 <View style={styles.collarStrap} />
@@ -409,6 +458,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#5a5a5a',
     marginBottom: 2,
+  },
+  // ── Impact flash ──
+  impactFlash: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#fff',
+    borderRadius: BAG_WIDTH / 2.3,
+    zIndex: 10,
   },
   // ── Bag body ──
   bagBody: {
