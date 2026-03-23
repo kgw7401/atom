@@ -80,6 +80,7 @@ export default function HomeScreen({ navigation }: Props) {
   const logoOpacity = useSharedValue(0);
   const logoTranslateY = useSharedValue(-30);
   const bagSwing = useSharedValue(0);
+  const bagTranslateX = useSharedValue(0);
   const bagScale = useSharedValue(0);
   const bagScaleX = useSharedValue(1);
   const bagScaleY = useSharedValue(1);
@@ -142,6 +143,7 @@ export default function HomeScreen({ navigation }: Props) {
         { scale: bagScale.value },
         { scaleX: bagScaleX.value },
         { scaleY: bagScaleY.value },
+        { translateX: bagTranslateX.value },
         { rotate: `${rotate}deg` },
       ],
     };
@@ -165,45 +167,55 @@ export default function HomeScreen({ navigation }: Props) {
     // Heavy impact haptic
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
-    // Squash: bag compresses horizontally, stretches wide on impact
+    // Squash on impact — bag deforms then bounces
     bagScaleX.value = withSequence(
-      withTiming(1.12, { duration: 60 }),                         // squash wide
-      withTiming(0.94, { duration: 100 }),                        // bounce narrow
-      withSpring(1, { damping: 10, stiffness: 180 }),             // settle
+      withTiming(1.15, { duration: 50 }),
+      withTiming(0.93, { duration: 80 }),
+      withTiming(1.05, { duration: 80 }),
+      withSpring(1, { damping: 8, stiffness: 150 }),
     );
     bagScaleY.value = withSequence(
-      withTiming(0.92, { duration: 60 }),                         // compress short
-      withTiming(1.04, { duration: 100 }),                        // stretch tall
-      withSpring(1, { damping: 10, stiffness: 180 }),             // settle
+      withTiming(0.9, { duration: 50 }),
+      withTiming(1.05, { duration: 80 }),
+      withTiming(0.97, { duration: 80 }),
+      withSpring(1, { damping: 8, stiffness: 150 }),
     );
 
-    // Recoil swing: bag swings back from punch, then oscillates
+    // Swing: push back hard, then oscillate back and forth many times
+    // Low damping = lots of oscillation, like a real heavy bag
     bagSwing.value = withSequence(
-      withTiming(6, { duration: 100 }),                           // punch pushes bag back
-      withSpring(0, { damping: 6, stiffness: 60, mass: 1.2 }),   // pendulum dampening
+      withTiming(8, { duration: 80 }),
+      withSpring(0, { damping: 3, stiffness: 40, mass: 1.5 }),
+    );
+
+    // Lateral translation synced with swing for more realistic arc
+    bagTranslateX.value = withSequence(
+      withTiming(18, { duration: 80 }),
+      withSpring(0, { damping: 3, stiffness: 40, mass: 1.5 }),
     );
 
     // Impact flash
     impactFlash.value = withSequence(
-      withTiming(0.8, { duration: 40 }),
-      withTiming(0, { duration: 300 }),
+      withTiming(0.7, { duration: 30 }),
+      withTiming(0, { duration: 200 }),
     );
 
     // Glow burst on impact
     glowOpacity.value = withSequence(
-      withTiming(0.9, { duration: 60 }),
-      withTiming(0.3, { duration: 400 }),
+      withTiming(0.9, { duration: 50 }),
+      withTiming(0.3, { duration: 500 }),
     );
     glowScale.value = withSequence(
-      withTiming(1.3, { duration: 80 }),
-      withSpring(1, { damping: 10, stiffness: 100 }),
+      withTiming(1.4, { duration: 60 }),
+      withSpring(1, { damping: 8, stiffness: 80 }),
     );
 
-    // Second haptic for weight feel
-    setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium), 80);
+    // Follow-through haptics for weight
+    setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium), 60);
+    setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light), 200);
 
-    // Navigate after impact animation plays
-    setTimeout(() => navigation.navigate('SessionPicker', { today }), 500);
+    // Navigate after oscillation plays
+    setTimeout(() => navigation.navigate('SessionPicker', { today }), 700);
   };
 
   const handleLevelChange = () => {
