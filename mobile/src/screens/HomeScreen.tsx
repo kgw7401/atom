@@ -79,14 +79,28 @@ export default function HomeScreen({ navigation }: Props) {
           onPress={() => navigation.navigate('SessionPicker', { today })}
           activeOpacity={0.8}
         >
-          {/* Hanger */}
-          <View style={styles.bagHanger} />
-          {/* Chain */}
-          <View style={styles.bagChain} />
+          {/* Ceiling mount bracket */}
+          <View style={styles.mountPlate} />
+          <View style={styles.mountBolt} />
+          {/* Chains — two angled + center */}
+          <View style={styles.chainGroup}>
+            <View style={[styles.chain, styles.chainLeft]} />
+            <View style={[styles.chain, styles.chainCenter]} />
+            <View style={[styles.chain, styles.chainRight]} />
+          </View>
+          {/* Swivel ring */}
+          <View style={styles.swivel} />
           {/* Bag body */}
           <View style={styles.bagBody}>
-            <Text style={styles.bagText}>TAP</Text>
+            {/* Top cap (leather collar) */}
+            <View style={styles.bagCap} />
+            {/* Highlight strip for 3D depth */}
+            <View style={styles.bagHighlight} />
+            {/* Center seam */}
+            <View style={styles.bagSeam} />
           </View>
+          {/* Bottom cap */}
+          <View style={styles.bagBottom} />
         </TouchableOpacity>
       </View>
 
@@ -107,8 +121,10 @@ export default function HomeScreen({ navigation }: Props) {
   );
 }
 
-const BAG_WIDTH = 100;
-const BAG_HEIGHT = 140;
+const BAG_WIDTH = 90;
+const BAG_HEIGHT = 200;
+const BAG_COLOR = '#8B1A1A';       // dark oxblood leather
+const BAG_HIGHLIGHT = '#A52222';   // lighter leather highlight
 
 const styles = StyleSheet.create({
   container: {
@@ -132,36 +148,93 @@ const styles = StyleSheet.create({
   bagButton: {
     alignItems: 'center',
   },
-  bagHanger: {
-    width: 40,
-    height: 3,
-    backgroundColor: COLORS.TEXT_3,
-    borderRadius: 1.5,
+  mountPlate: {
+    width: 48,
+    height: 6,
+    backgroundColor: '#3a3a3a',
+    borderRadius: 2,
   },
-  bagChain: {
+  mountBolt: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#4a4a4a',
+    marginTop: -1,
+  },
+  chainGroup: {
+    width: 40,
+    height: 28,
+    position: 'relative',
+  },
+  chain: {
+    position: 'absolute',
     width: 2,
-    height: 20,
-    backgroundColor: COLORS.TEXT_3,
+    height: 28,
+    backgroundColor: '#5a5a5a',
+    top: 0,
+  },
+  chainLeft: {
+    left: 4,
+    transform: [{ rotate: '8deg' }],
+  },
+  chainCenter: {
+    left: 19,
+  },
+  chainRight: {
+    right: 4,
+    transform: [{ rotate: '-8deg' }],
+  },
+  swivel: {
+    width: 14,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#4a4a4a',
+    marginBottom: 2,
   },
   bagBody: {
     width: BAG_WIDTH,
     height: BAG_HEIGHT,
-    borderRadius: BAG_WIDTH / 2,
-    backgroundColor: COLORS.RED,
-    alignItems: 'center',
-    justifyContent: 'center',
-    // Punching bag shape: wider at top, narrower at bottom
-    borderTopLeftRadius: BAG_WIDTH / 2.2,
-    borderTopRightRadius: BAG_WIDTH / 2.2,
-    borderBottomLeftRadius: BAG_WIDTH / 2.8,
-    borderBottomRightRadius: BAG_WIDTH / 2.8,
+    backgroundColor: BAG_COLOR,
+    borderTopLeftRadius: BAG_WIDTH / 2.5,
+    borderTopRightRadius: BAG_WIDTH / 2.5,
+    borderBottomLeftRadius: BAG_WIDTH / 3,
+    borderBottomRightRadius: BAG_WIDTH / 3,
+    overflow: 'hidden',
   },
-  bagText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '700',
-    letterSpacing: 3,
-    opacity: 0.9,
+  bagCap: {
+    width: BAG_WIDTH,
+    height: 14,
+    backgroundColor: '#6B1414',
+    borderBottomWidth: 2,
+    borderBottomColor: '#4a1010',
+  },
+  bagHighlight: {
+    position: 'absolute',
+    left: BAG_WIDTH * 0.22,
+    top: 20,
+    width: 12,
+    height: BAG_HEIGHT - 50,
+    backgroundColor: BAG_HIGHLIGHT,
+    borderRadius: 6,
+    opacity: 0.4,
+  },
+  bagSeam: {
+    position: 'absolute',
+    left: BAG_WIDTH / 2 - 0.5,
+    top: 16,
+    width: 1,
+    height: BAG_HEIGHT - 40,
+    backgroundColor: '#5a1515',
+    opacity: 0.6,
+  },
+  bagBottom: {
+    width: BAG_WIDTH * 0.7,
+    height: 10,
+    backgroundColor: '#6B1414',
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+    alignSelf: 'center',
+    marginTop: -2,
   },
   bottomRow: {
     flexDirection: 'row',
