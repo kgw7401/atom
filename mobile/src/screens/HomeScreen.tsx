@@ -139,15 +139,19 @@ export default function HomeScreen({ navigation }: Props) {
     transform: [{ translateY: logoTranslateY.value }],
   }));
 
-  const bagContainerStyle = useAnimatedStyle(() => ({
-    transform: [
-      { scale: bagScale.value },
-      { scaleX: bagScaleX.value },
-      { scaleY: bagScaleY.value },
-      { translateX: bagTranslateX.value },
-      { rotate: `${bagSwing.value * 1.8}deg` },
-    ],
-  }));
+  const bagContainerStyle = useAnimatedStyle(() => {
+    // Lateral sway follows rotation — pendulum physics (bottom swings with the tilt)
+    const idleLateral = bagSwing.value * 14;
+    return {
+      transform: [
+        { scale: bagScale.value },
+        { scaleX: bagScaleX.value },
+        { scaleY: bagScaleY.value },
+        { translateX: bagTranslateX.value + idleLateral },
+        { rotate: `${bagSwing.value * 1.8}deg` },
+      ],
+    };
+  });
 
   const impactFlashStyle = useAnimatedStyle(() => ({
     opacity: impactFlash.value,
