@@ -298,7 +298,6 @@ export default function ActiveSessionScreen({ route, navigation }: Props) {
   useEffect(() => {
     if (sessionStarted) return;
     if (countdown <= 0) {
-      speakAsync('시작합니다');
       setSessionStarted(true);
       return;
     }
