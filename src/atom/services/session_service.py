@@ -46,6 +46,7 @@ class SessionService:
 
         # Try program-based generation
         day_template = None
+        progress = None
         if program_day_id:
             result = await self.session.execute(
                 select(ProgramDayTemplate).where(ProgramDayTemplate.id == program_day_id)
