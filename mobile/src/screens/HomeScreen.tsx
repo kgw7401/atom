@@ -164,17 +164,21 @@ export default function HomeScreen({ navigation }: Props) {
   }));
 
   const handlePress = (e: GestureResponderEvent) => {
-    const tapX = e.nativeEvent.locationX;
-    const tapY = e.nativeEvent.locationY;
-    const centerX = BAG_WIDTH / 2;
+    // Use absolute screen position for reliable direction detection
+    const tapScreenX = e.nativeEvent.pageX;
+    const screenCenterX = SCREEN_W / 2;
 
-    // Punch direction: tap left → force pushes right (positive), tap right → left
-    const offsetX = (centerX - tapX) / centerX; // -1 to 1
-    // Higher tap = longer lever arm = more torque
+    // Punch from left → bag goes right (positive), punch from right → left (negative)
+    const offsetX = (screenCenterX - tapScreenX) / (SCREEN_W / 4); // normalized, clamped
+    const clampedOffset = Math.max(-1, Math.min(1, offsetX));
+
+    // Tap Y for lever arm (higher = more torque)
+    const tapY = e.nativeEvent.locationY;
     const leverArm = Math.max(0.6, 1 - (tapY / (BAG_HEIGHT + 78)) * 0.4);
-    // Punch force scales with distance from center
-    const force = Math.max(0.5, Math.abs(offsetX) + 0.4) * leverArm;
-    const direction = Math.sign(offsetX) || 1;
+
+    // Force from distance to center
+    const force = Math.max(0.5, Math.abs(clampedOffset) + 0.4) * leverArm;
+    const direction = clampedOffset >= 0 ? 1 : -1;
 
     // ── Impulse velocity (no position tween — pure physics) ──
     // Apply instant velocity, let spring physics handle oscillation
