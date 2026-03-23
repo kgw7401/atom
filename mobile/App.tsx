@@ -23,6 +23,7 @@ import { COLORS } from './src/theme';
 
 import HomeScreen from './src/screens/HomeScreen';
 import ActiveSessionScreen from './src/screens/ActiveSessionScreen';
+import SessionPickerScreen from './src/screens/SessionPickerScreen';
 import SessionEndScreen from './src/screens/SessionEndScreen';
 import FeedScreen from './src/screens/FeedScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
@@ -46,6 +47,11 @@ function HomeStackScreen() {
   return (
     <Stack.Navigator screenOptions={DARK}>
       <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
+      <Stack.Screen
+        name="SessionPicker"
+        component={SessionPickerScreen}
+        options={{ headerShown: false }}
+      />
       <Stack.Screen
         name="ActiveSession"
         component={ActiveSessionScreen}
