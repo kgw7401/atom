@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View, Text, TouchableOpacity, Pressable, StyleSheet,
   ActivityIndicator, Alert, Dimensions, GestureResponderEvent,
@@ -11,6 +11,7 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
+import { Audio } from 'expo-av';
 import Svg, {
   Defs, LinearGradient, RadialGradient, Stop,
   Path, Rect, Line, Circle, Ellipse,
@@ -18,6 +19,17 @@ import Svg, {
 import { COLORS, TYPOGRAPHY, SPACING } from '../theme';
 import { fetchToday, TodayData } from '../api/session';
 import { updateProfile } from '../api/profile';
+
+// ── Impact SFX assets ──
+const IMPACT_SFX = [
+  require('../../assets/sfx/impact/body_1.mp3'),
+  require('../../assets/sfx/impact/body_2.mp3'),
+  require('../../assets/sfx/impact/body_3.mp3'),
+];
+const CHAIN_SFX = [
+  require('../../assets/sfx/impact/chain_1.mp3'),
+  require('../../assets/sfx/impact/chain_2.mp3'),
+];
 
 type Props = { navigation: NativeStackNavigationProp<any> };
 
@@ -84,6 +96,54 @@ function FloatingParticle({ delay, x, size }: { delay: number; x: number; size: 
 export default function HomeScreen({ navigation }: Props) {
   const [today, setToday] = useState<TodayData | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // ── Impact SFX ──
+  const impactSounds = useRef<Audio.Sound[]>([]);
+  const chainSounds = useRef<Audio.Sound[]>([]);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      for (const asset of IMPACT_SFX) {
+        try {
+          const { sound } = await Audio.Sound.createAsync(asset, { shouldPlay: false });
+          if (mounted) impactSounds.current.push(sound);
+        } catch {}
+      }
+      for (const asset of CHAIN_SFX) {
+        try {
+          const { sound } = await Audio.Sound.createAsync(asset, { shouldPlay: false });
+          if (mounted) chainSounds.current.push(sound);
+        } catch {}
+      }
+    })();
+    return () => {
+      mounted = false;
+      impactSounds.current.forEach((s) => s.unloadAsync().catch(() => {}));
+      chainSounds.current.forEach((s) => s.unloadAsync().catch(() => {}));
+    };
+  }, []);
+
+  const playImpactSfx = useCallback(async () => {
+    const sounds = impactSounds.current;
+    if (sounds.length === 0) return;
+    const hit = sounds[Math.floor(Math.random() * sounds.length)];
+    try {
+      await hit.setPositionAsync(0);
+      await hit.playAsync();
+    } catch {}
+    // Chain rattle after a short delay
+    const chains = chainSounds.current;
+    if (chains.length > 0) {
+      setTimeout(async () => {
+        const chain = chains[Math.floor(Math.random() * chains.length)];
+        try {
+          await chain.setPositionAsync(0);
+          await chain.playAsync();
+        } catch {}
+      }, 120);
+    }
+  }, []);
 
   // ── Shared values ──
   const logoOpacity = useSharedValue(0);
@@ -176,6 +236,7 @@ export default function HomeScreen({ navigation }: Props) {
     const direction = clampedOffset >= 0 ? 1 : -1;
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    playImpactSfx();
 
     // Pendulum: rotation only (pivot at top), no lateral translate
     bagSwing.value = withSpring(0, { velocity: direction * force * 90, damping: 2.5, stiffness: 25, mass: 2 });
