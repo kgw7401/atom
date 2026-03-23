@@ -29,7 +29,6 @@ interface Phase {
 }
 
 const PHASES: Phase[] = [
-  { key: 'intro',    label: 'INTRO',    labelKo: '준비',   duration: 20,  bgColor: COLORS.BG },
   { key: 'round1',   label: 'ROUND 1',  labelKo: '적응',   duration: 180, bgColor: COLORS.PHASE_ROUND, roundIndex: 0 },
   { key: 'rest1',    label: 'REST',     labelKo: '휴식',   duration: 15,  bgColor: COLORS.PHASE_REST },
   { key: 'round2',   label: 'ROUND 2',  labelKo: '적용',   duration: 180, bgColor: COLORS.PHASE_ROUND, roundIndex: 1 },
@@ -299,6 +298,7 @@ export default function ActiveSessionScreen({ route, navigation }: Props) {
   useEffect(() => {
     if (sessionStarted) return;
     if (countdown <= 0) {
+      speakAsync('시작합니다');
       setSessionStarted(true);
       return;
     }
@@ -344,13 +344,7 @@ export default function ActiveSessionScreen({ route, navigation }: Props) {
 
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
-        if (phase.key === 'intro') {
-          // Intro phase: coach intro
-          setCurrentText('준비');
-          await speakAsync('시작합니다');
-          await sleepMs((phase.duration - 5) * 1000);
-
-        } else if (phase.key.startsWith('rest')) {
+        if (phase.key.startsWith('rest')) {
           // Rest phase
           setCurrentText('쉬어');
           await speakAsync('쉬어');
@@ -483,8 +477,7 @@ export default function ActiveSessionScreen({ route, navigation }: Props) {
           </Animated.View>
         ) : (
           <Text style={styles.waiting}>
-            {currentPhase.key === 'intro' ? '준비...' :
-             currentPhase.key.startsWith('rest') ? '잠시 쉬세요' :
+            {currentPhase.key.startsWith('rest') ? '잠시 쉬세요' :
              currentPhase.key === 'outro' ? '마무리' : ''}
           </Text>
         )}

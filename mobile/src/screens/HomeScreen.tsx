@@ -1,9 +1,9 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, TYPOGRAPHY, SPACING } from '../theme';
-import { fetchToday, generatePlan, TodayData } from '../api/session';
+import { fetchToday, generatePlan, TodayData, ProgramDaySummary } from '../api/session';
 import { updateProfile } from '../api/profile';
 
 type Props = { navigation: NativeStackNavigationProp<any> };
@@ -18,6 +18,7 @@ const LEVEL_LABELS: Record<string, string> = {
 
 export default function HomeScreen({ navigation }: Props) {
   const [today, setToday] = useState<TodayData | null>(null);
+  const [selectedDay, setSelectedDay] = useState<ProgramDaySummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [starting, setStarting] = useState(false);
 
@@ -36,6 +37,8 @@ export default function HomeScreen({ navigation }: Props) {
               await updateProfile({ experience_level: lvl });
               const data = await fetchToday();
               setToday(data);
+              const rec = data.program_days.find((d) => d.day_number === data.day_number) ?? null;
+              setSelectedDay(rec);
             } catch (e) {
               console.error('Level change failed:', e);
             }
@@ -51,7 +54,13 @@ export default function HomeScreen({ navigation }: Props) {
       let cancelled = false;
       setLoading(true);
       fetchToday()
-        .then((data) => { if (!cancelled) setToday(data); })
+        .then((data) => {
+          if (!cancelled) {
+            setToday(data);
+            const rec = data.program_days.find((d) => d.day_number === data.day_number) ?? null;
+            setSelectedDay(rec);
+          }
+        })
         .catch((e) => console.warn('fetchToday failed:', e))
         .finally(() => { if (!cancelled) setLoading(false); });
       return () => { cancelled = true; };
@@ -62,7 +71,7 @@ export default function HomeScreen({ navigation }: Props) {
     if (starting) return;
     setStarting(true);
     try {
-      const plan = await generatePlan({});
+      const plan = await generatePlan(selectedDay ? { program_day_id: selectedDay.id } : {});
       navigation.navigate('ActiveSession', { plan, today });
     } catch (e) {
       console.error('Plan generation failed:', e);
@@ -100,17 +109,51 @@ export default function HomeScreen({ navigation }: Props) {
         </View>
       </View>
 
-      {/* Today's Theme */}
-      <View style={styles.themeSection}>
-        <Text style={styles.themeTitle}>{today?.theme ?? '훈련'}</Text>
-        <Text style={styles.themeDesc}>{today?.theme_description ?? ''}</Text>
-      </View>
+      {/* Session Picker */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.pickerRow}
+        style={styles.pickerScroll}
+      >
+        {(today?.program_days ?? []).map((day) => {
+          const isSelected = selectedDay?.day_number === day.day_number;
+          const isRecommended = day.day_number === today?.day_number;
+          return (
+            <TouchableOpacity
+              key={day.day_number}
+              style={[
+                styles.dayCard,
+                isSelected && styles.dayCardSelected,
+              ]}
+              onPress={() => setSelectedDay(day)}
+              activeOpacity={0.7}
+            >
+              {isRecommended && <View style={styles.recommendedDot} />}
+              <Text style={[styles.dayNumber, isSelected && styles.dayNumberSelected]}>
+                {day.day_number}
+              </Text>
+              <Text style={[styles.dayTheme, isSelected && styles.dayThemeSelected]} numberOfLines={2}>
+                {day.theme}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+
+      {/* Selected Day Info */}
+      {selectedDay && (
+        <View style={styles.selectedInfo}>
+          <Text style={styles.themeTitle}>{selectedDay.theme}</Text>
+          <Text style={styles.themeDesc}>{selectedDay.theme_description}</Text>
+        </View>
+      )}
 
       {/* Coach Comment */}
-      {today?.coach_comment ? (
+      {selectedDay?.coach_comment ? (
         <View style={styles.coachCard}>
           <Text style={styles.coachLabel}>코치</Text>
-          <Text style={styles.coachText}>{today.coach_comment}</Text>
+          <Text style={styles.coachText}>{selectedDay.coach_comment}</Text>
         </View>
       ) : null}
 
@@ -183,9 +226,59 @@ const styles = StyleSheet.create({
     ...TYPOGRAPHY.META,
     fontWeight: '700',
   },
-  themeSection: {
+  pickerScroll: {
+    maxHeight: 100,
+    marginBottom: 20,
+  },
+  pickerRow: {
+    gap: 10,
+    paddingHorizontal: 2,
+  },
+  dayCard: {
+    width: 72,
+    height: 80,
+    backgroundColor: COLORS.SURFACE,
+    borderRadius: SPACING.RADIUS_CARD,
+    borderWidth: 1,
+    borderColor: COLORS.BORDER,
     alignItems: 'center',
-    marginBottom: 24,
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  dayCardSelected: {
+    backgroundColor: COLORS.RED_BG,
+    borderColor: COLORS.RED,
+    borderWidth: 1.5,
+  },
+  recommendedDot: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: COLORS.RED,
+  },
+  dayNumber: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: COLORS.TEXT_3,
+    marginBottom: 4,
+  },
+  dayNumberSelected: {
+    color: COLORS.RED,
+  },
+  dayTheme: {
+    ...TYPOGRAPHY.META,
+    color: COLORS.TEXT_3,
+    textAlign: 'center',
+  },
+  dayThemeSelected: {
+    color: COLORS.TEXT_1,
+  },
+  selectedInfo: {
+    alignItems: 'center',
+    marginBottom: 16,
   },
   themeTitle: {
     ...TYPOGRAPHY.TITLE,

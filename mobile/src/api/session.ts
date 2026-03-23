@@ -50,6 +50,14 @@ export interface PlanResponse {
   coach_comment?: string;
 }
 
+export interface ProgramDaySummary {
+  id: string;
+  day_number: number;
+  theme: string;
+  theme_description: string;
+  coach_comment: string;
+}
+
 export interface TodayData {
   streak: number;
   day_number: number;
@@ -60,6 +68,7 @@ export interface TodayData {
   level: string;
   week: number;
   next_day_preview: { day_number: number; theme: string; is_cycle_restart?: boolean } | null;
+  program_days: ProgramDaySummary[];
 }
 
 export interface SessionSummary {

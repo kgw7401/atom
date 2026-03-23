@@ -77,35 +77,10 @@ class SessionService:
 
     @staticmethod
     def _shuffle_segments(segments: list[dict]) -> list[dict]:
-        """Shuffle combo segments while keeping cues evenly distributed.
-
-        Separates combo segments from cue segments, shuffles combos,
-        then re-interleaves cues at regular intervals.
-        """
+        """Shuffle combo segments (cues are excluded)."""
         combos = [s for s in segments if not s.get("is_cue")]
-        cues = [s for s in segments if s.get("is_cue")]
-
-        if not combos or not cues:
-            # Nothing meaningful to shuffle
-            random.shuffle(combos)
-            return combos + cues
-
         random.shuffle(combos)
-
-        # Re-interleave cues at regular intervals
-        gap = max(1, len(combos) // (len(cues) + 1))
-        result: list[dict] = []
-        cue_idx = 0
-        for i, combo in enumerate(combos):
-            result.append(combo)
-            if cue_idx < len(cues) and (i + 1) % gap == 0 and i + 1 < len(combos):
-                result.append(cues[cue_idx])
-                cue_idx += 1
-        # Append any remaining cues
-        while cue_idx < len(cues):
-            result.append(cues[cue_idx])
-            cue_idx += 1
-        return result
+        return combos
 
     async def _generate_from_program(
         self,

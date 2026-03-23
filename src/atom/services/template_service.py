@@ -13,7 +13,6 @@ from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from atom.models.tables import AudioChunk, DrillPlan, SessionTemplate
-from atom.seed_templates import CUES
 
 AUDIO_DIR = Path("data/audio")
 
@@ -32,39 +31,6 @@ def _load_assembly() -> dict:
             if not k.startswith("_")
         }
     return _assembly_cache
-
-
-def _place_cues(combos: list[str], cues: list[str]) -> list[str]:
-    """Insert cues into combo sequence.
-
-    Rules:
-    - Cue never at position 0 (first) or last position
-    - No two cues adjacent
-    """
-    result = list(combos)
-    if not cues or len(result) < 2:
-        return result
-
-    # Even spacing across interior positions
-    n = len(cues)
-    step = (len(result) - 1) / (n + 1)
-    positions = [max(1, min(round(step * (i + 1)), len(result) - 1)) for i in range(n)]
-
-    # Deduplicate (shift right on collision)
-    used: set[int] = set()
-    final_pos: list[int] = []
-    for p in positions:
-        while p in used:
-            p += 1
-        used.add(p)
-        final_pos.append(p)
-
-    # Insert back-to-front to preserve indices
-    for pos, cue in sorted(zip(final_pos, cues), reverse=True):
-        if pos <= len(result):
-            result.insert(pos, cue)
-
-    return result
 
 
 class TemplateService:
@@ -105,29 +71,23 @@ class TemplateService:
         rounds: int,
         round_duration_sec: int,
     ) -> dict:
-        """Build round plan with weighted sampling and cue placement.
+        """Build round plan with weighted sampling.
 
         - Combos sampled from combo_pool using weights
-        - Cues inserted via _place_cues (never first/last, never consecutive)
         - Audio chunks resolved per segment
         """
         assembly = _load_assembly()
 
         pool = template.segments_json["combo_pool"]
-        cue_ratio = template.segments_json.get("cue_ratio", 0.10)
 
         combo_calls = [item["call"] for item in pool]
         combo_weights = [item["weight"] for item in pool]
 
         total_target = max(5, round(round_duration_sec / 3.5))
-        n_cues = max(1, round(total_target * cue_ratio))
-        n_combos = total_target - n_cues
 
         rounds_list = []
         for r in range(1, rounds + 1):
-            selected_combos = random.choices(combo_calls, weights=combo_weights, k=n_combos)
-            selected_cues = random.choices(CUES, k=n_cues)
-            sequence = _place_cues(selected_combos, selected_cues)
+            sequence = random.choices(combo_calls, weights=combo_weights, k=total_target)
 
             round_segments = []
             for text in sequence:

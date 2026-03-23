@@ -213,6 +213,22 @@ class ProfileService:
             if next_template:
                 next_preview = {"day_number": 1, "theme": next_template.theme, "is_cycle_restart": True}
 
+        # All 7 day summaries for session picker
+        all_templates = await self._lookup_all_templates(progress.level, progress.week)
+        program_days = []
+        for t in all_templates:
+            cc = t.coach_comment
+            if t.coach_comments_json:
+                variants = t.coach_comments_json
+                cc = variants[(progress.week - 1) % len(variants)]
+            program_days.append({
+                "id": t.id,
+                "day_number": t.day_number,
+                "theme": t.theme,
+                "theme_description": t.theme_description,
+                "coach_comment": cc,
+            })
+
         return {
             "streak": streak,
             "day_number": progress.current_day,
@@ -223,7 +239,33 @@ class ProfileService:
             "level": progress.level,
             "week": progress.week,
             "next_day_preview": next_preview,
+            "program_days": program_days,
         }
+
+    async def _lookup_all_templates(
+        self, level: str, week: int,
+    ) -> list[ProgramDayTemplate]:
+        """Look up all 7 day templates for a level/week, falling back to week 1."""
+        result = await self.session.execute(
+            select(ProgramDayTemplate)
+            .where(
+                ProgramDayTemplate.level == level,
+                ProgramDayTemplate.week == week,
+            )
+            .order_by(ProgramDayTemplate.day_number)
+        )
+        templates = list(result.scalars().all())
+        if not templates and week > 1:
+            result = await self.session.execute(
+                select(ProgramDayTemplate)
+                .where(
+                    ProgramDayTemplate.level == level,
+                    ProgramDayTemplate.week == 1,
+                )
+                .order_by(ProgramDayTemplate.day_number)
+            )
+            templates = list(result.scalars().all())
+        return templates
 
     async def _lookup_template(
         self, level: str, week: int, day_number: int,

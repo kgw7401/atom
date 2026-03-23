@@ -129,6 +129,14 @@ class ProfileUpdate(BaseModel):
 
 # ── Today (home screen) ─────────────────────────────────────────────
 
+class ProgramDaySummary(BaseModel):
+    id: str
+    day_number: int
+    theme: str
+    theme_description: str
+    coach_comment: str
+
+
 class TodayResponse(BaseModel):
     streak: int
     day_number: int
@@ -139,3 +147,4 @@ class TodayResponse(BaseModel):
     level: str
     week: int
     next_day_preview: dict | None = None  # {day_number, theme}
+    program_days: list[ProgramDaySummary] = []
