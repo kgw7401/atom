@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Dimensions } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 import Animated, {
@@ -19,6 +19,8 @@ import { updateProfile } from '../api/profile';
 
 type Props = { navigation: NativeStackNavigationProp<any> };
 
+const { width: SCREEN_W } = Dimensions.get('window');
+
 const LEVELS = ['beginner', 'intermediate', 'advanced'] as const;
 const LEVEL_LABELS: Record<string, string> = {
   beginner: '입문',
@@ -27,7 +29,47 @@ const LEVEL_LABELS: Record<string, string> = {
   advanced: '고급',
 };
 
-const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
+// ── Floating particle component ─────────────────────────────────────
+function FloatingParticle({ delay, x, size }: { delay: number; x: number; size: number }) {
+  const translateY = useSharedValue(0);
+  const opacity = useSharedValue(0);
+
+  useEffect(() => {
+    opacity.value = withDelay(delay,
+      withRepeat(
+        withSequence(
+          withTiming(0.4, { duration: 2000, easing: Easing.inOut(Easing.sin) }),
+          withTiming(0, { duration: 2000, easing: Easing.inOut(Easing.sin) }),
+        ), -1, true,
+      )
+    );
+    translateY.value = withDelay(delay,
+      withRepeat(
+        withTiming(-120, { duration: 4000, easing: Easing.inOut(Easing.sin) }),
+        -1, true,
+      )
+    );
+  }, []);
+
+  const style = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ translateY: translateY.value }],
+  }));
+
+  return (
+    <Animated.View
+      style={[{
+        position: 'absolute',
+        left: x,
+        bottom: '30%',
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        backgroundColor: COLORS.RED,
+      }, style]}
+    />
+  );
+}
 
 export default function HomeScreen({ navigation }: Props) {
   const [today, setToday] = useState<TodayData | null>(null);
@@ -35,46 +77,53 @@ export default function HomeScreen({ navigation }: Props) {
 
   // ── Animations ──────────────────────────────────────────────────
   const logoOpacity = useSharedValue(0);
-  const logoTranslateY = useSharedValue(-20);
+  const logoTranslateY = useSharedValue(-30);
   const bagSwing = useSharedValue(0);
   const bagScale = useSharedValue(0);
-  const glowOpacity = useSharedValue(0.3);
+  const glowOpacity = useSharedValue(0);
+  const glowScale = useSharedValue(0.8);
   const bottomOpacity = useSharedValue(0);
+  const bottomTranslateY = useSharedValue(20);
 
   useEffect(() => {
-    // Logo fade-in from top
-    logoOpacity.value = withDelay(200, withTiming(1, { duration: 600 }));
-    logoTranslateY.value = withDelay(200, withTiming(0, { duration: 600, easing: Easing.out(Easing.cubic) }));
+    // Logo
+    logoOpacity.value = withDelay(200, withTiming(1, { duration: 800 }));
+    logoTranslateY.value = withDelay(200, withTiming(0, { duration: 800, easing: Easing.out(Easing.cubic) }));
 
-    // Bag entrance: scale up with spring
-    bagScale.value = withDelay(500, withSpring(1, { damping: 12, stiffness: 100 }));
+    // Bag entrance
+    bagScale.value = withDelay(400, withSpring(1, { damping: 14, stiffness: 80 }));
 
-    // Idle sway: gentle pendulum (starts after entrance)
-    bagSwing.value = withDelay(1200,
+    // Idle sway
+    bagSwing.value = withDelay(1400,
       withRepeat(
         withSequence(
-          withTiming(1, { duration: 2400, easing: Easing.inOut(Easing.sin) }),
-          withTiming(-1, { duration: 2400, easing: Easing.inOut(Easing.sin) }),
-        ),
-        -1, // infinite
-        true,
+          withTiming(1, { duration: 2800, easing: Easing.inOut(Easing.sin) }),
+          withTiming(-1, { duration: 2800, easing: Easing.inOut(Easing.sin) }),
+        ), -1, true,
       )
     );
 
     // Glow pulse
-    glowOpacity.value = withDelay(800,
+    glowOpacity.value = withDelay(600,
       withRepeat(
         withSequence(
-          withTiming(0.6, { duration: 2000, easing: Easing.inOut(Easing.sin) }),
-          withTiming(0.2, { duration: 2000, easing: Easing.inOut(Easing.sin) }),
-        ),
-        -1,
-        true,
+          withTiming(0.5, { duration: 2200, easing: Easing.inOut(Easing.sin) }),
+          withTiming(0.15, { duration: 2200, easing: Easing.inOut(Easing.sin) }),
+        ), -1, true,
+      )
+    );
+    glowScale.value = withDelay(600,
+      withRepeat(
+        withSequence(
+          withTiming(1.1, { duration: 2200, easing: Easing.inOut(Easing.sin) }),
+          withTiming(0.9, { duration: 2200, easing: Easing.inOut(Easing.sin) }),
+        ), -1, true,
       )
     );
 
-    // Bottom badges fade in
-    bottomOpacity.value = withDelay(900, withTiming(1, { duration: 500 }));
+    // Bottom
+    bottomOpacity.value = withDelay(1000, withTiming(1, { duration: 600 }));
+    bottomTranslateY.value = withDelay(1000, withTiming(0, { duration: 600, easing: Easing.out(Easing.cubic) }));
   }, []);
 
   const logoStyle = useAnimatedStyle(() => ({
@@ -83,7 +132,7 @@ export default function HomeScreen({ navigation }: Props) {
   }));
 
   const bagContainerStyle = useAnimatedStyle(() => {
-    const rotate = interpolate(bagSwing.value, [-1, 1], [-1.5, 1.5]);
+    const rotate = interpolate(bagSwing.value, [-1, 1], [-1.8, 1.8]);
     return {
       transform: [
         { scale: bagScale.value },
@@ -94,23 +143,20 @@ export default function HomeScreen({ navigation }: Props) {
 
   const glowStyle = useAnimatedStyle(() => ({
     opacity: glowOpacity.value,
+    transform: [{ scale: glowScale.value }],
   }));
 
   const bottomStyle = useAnimatedStyle(() => ({
     opacity: bottomOpacity.value,
+    transform: [{ translateY: bottomTranslateY.value }],
   }));
 
-  // ── Tap handler with press animation ────────────────────────────
   const handlePress = () => {
-    // Quick punch reaction: squish then spring back
     bagScale.value = withSequence(
-      withTiming(0.92, { duration: 80 }),
+      withTiming(0.9, { duration: 80 }),
       withSpring(1, { damping: 8, stiffness: 200 }),
     );
-    // Navigate after brief delay for visual feedback
-    setTimeout(() => {
-      navigation.navigate('SessionPicker', { today });
-    }, 150);
+    setTimeout(() => navigation.navigate('SessionPicker', { today }), 150);
   };
 
   const handleLevelChange = () => {
@@ -162,39 +208,63 @@ export default function HomeScreen({ navigation }: Props) {
 
   return (
     <View style={styles.container}>
+      {/* Ambient particles */}
+      <FloatingParticle delay={0} x={SCREEN_W * 0.15} size={3} />
+      <FloatingParticle delay={800} x={SCREEN_W * 0.75} size={2} />
+      <FloatingParticle delay={1600} x={SCREEN_W * 0.55} size={4} />
+      <FloatingParticle delay={2400} x={SCREEN_W * 0.3} size={2} />
+      <FloatingParticle delay={3200} x={SCREEN_W * 0.85} size={3} />
+
       {/* Logo */}
       <Animated.Text style={[styles.logo, logoStyle]}>ATOM</Animated.Text>
 
       {/* Center: Punching Bag */}
       <View style={styles.center}>
-        {/* Glow behind bag */}
-        <Animated.View style={[styles.glow, glowStyle]} />
+        {/* Outer glow ring */}
+        <Animated.View style={[styles.glowOuter, glowStyle]} />
+        {/* Inner glow */}
+        <Animated.View style={[styles.glowInner, glowStyle]} />
 
         <Animated.View style={[styles.bagAssembly, bagContainerStyle]}>
-          <TouchableOpacity
-            style={styles.bagButton}
-            onPress={handlePress}
-            activeOpacity={1}
-          >
-            {/* Mount */}
-            <View style={styles.mountPlate} />
+          <TouchableOpacity style={styles.bagButton} onPress={handlePress} activeOpacity={1}>
+            {/* Mount bracket */}
+            <View style={styles.mountPlate}>
+              <View style={styles.mountRidge} />
+            </View>
             <View style={styles.mountBolt} />
+
             {/* Chains */}
             <View style={styles.chainGroup}>
               <View style={[styles.chain, styles.chainLeft]} />
               <View style={[styles.chain, styles.chainCenter]} />
               <View style={[styles.chain, styles.chainRight]} />
             </View>
+
             {/* Swivel */}
             <View style={styles.swivel} />
+
             {/* Bag body */}
             <View style={styles.bagBody}>
-              <View style={styles.bagCap} />
-              <View style={styles.bagHighlight} />
+              {/* Top collar with strap detail */}
+              <View style={styles.bagCollar}>
+                <View style={styles.collarStrap} />
+              </View>
+              {/* Left highlight (3D depth) */}
+              <View style={styles.bagHighlightL} />
+              {/* Right shadow */}
+              <View style={styles.bagShadowR} />
+              {/* Center seam */}
               <View style={styles.bagSeam} />
+              {/* Brand area */}
+              <View style={styles.brandArea}>
+                <View style={styles.brandLine} />
+              </View>
             </View>
+
             {/* Bottom cap */}
-            <View style={styles.bagBottom} />
+            <View style={styles.bagBottom}>
+              <View style={styles.bottomStrap} />
+            </View>
           </TouchableOpacity>
         </Animated.View>
       </View>
@@ -216,22 +286,25 @@ export default function HomeScreen({ navigation }: Props) {
   );
 }
 
-const BAG_WIDTH = 90;
-const BAG_HEIGHT = 200;
+const BAG_WIDTH = 120;
+const BAG_HEIGHT = 280;
 const BAG_COLOR = '#8B1A1A';
-const BAG_HIGHLIGHT = '#A52222';
+const BAG_DARK = '#6B1414';
+const BAG_DARKER = '#4a1010';
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.BG,
     paddingHorizontal: SPACING.PADDING_SCREEN,
-    paddingTop: 80,
-    paddingBottom: 50,
+    paddingTop: 70,
+    paddingBottom: 44,
     alignItems: 'center',
   },
   logo: {
-    ...TYPOGRAPHY.APP_TITLE,
+    fontSize: 36,
+    fontWeight: '900',
+    letterSpacing: 10,
     color: COLORS.RED,
     textAlign: 'center',
   },
@@ -240,109 +313,181 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  glow: {
+  // ── Glow ──
+  glowOuter: {
     position: 'absolute',
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    backgroundColor: COLORS.RED,
+    width: 260,
+    height: 260,
+    borderRadius: 130,
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: COLORS.RED,
   },
+  glowInner: {
+    position: 'absolute',
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: COLORS.RED,
+    opacity: 0.15,
+  },
+  // ── Bag assembly ──
   bagAssembly: {
     alignItems: 'center',
-    // Pivot from top (mount point)
     transformOrigin: 'top center',
   },
   bagButton: {
     alignItems: 'center',
   },
   mountPlate: {
-    width: 48,
-    height: 6,
+    width: 56,
+    height: 8,
     backgroundColor: '#3a3a3a',
-    borderRadius: 2,
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  mountRidge: {
+    position: 'absolute',
+    top: 3,
+    left: 0,
+    right: 0,
+    height: 1,
+    backgroundColor: '#4a4a4a',
   },
   mountBolt: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
     backgroundColor: '#4a4a4a',
-    marginTop: -1,
+    borderWidth: 1,
+    borderColor: '#5a5a5a',
+    marginTop: -2,
   },
   chainGroup: {
-    width: 40,
-    height: 28,
+    width: 50,
+    height: 36,
     position: 'relative',
   },
   chain: {
     position: 'absolute',
     width: 2,
-    height: 28,
+    height: 36,
     backgroundColor: '#5a5a5a',
     top: 0,
   },
   chainLeft: {
-    left: 4,
-    transform: [{ rotate: '8deg' }],
+    left: 5,
+    transform: [{ rotate: '10deg' }],
   },
   chainCenter: {
-    left: 19,
+    left: 24,
   },
   chainRight: {
-    right: 4,
-    transform: [{ rotate: '-8deg' }],
+    right: 5,
+    transform: [{ rotate: '-10deg' }],
   },
   swivel: {
-    width: 14,
-    height: 6,
-    borderRadius: 3,
+    width: 16,
+    height: 8,
+    borderRadius: 4,
     backgroundColor: '#4a4a4a',
+    borderWidth: 1,
+    borderColor: '#5a5a5a',
     marginBottom: 2,
   },
+  // ── Bag body ──
   bagBody: {
     width: BAG_WIDTH,
     height: BAG_HEIGHT,
     backgroundColor: BAG_COLOR,
-    borderTopLeftRadius: BAG_WIDTH / 2.5,
-    borderTopRightRadius: BAG_WIDTH / 2.5,
-    borderBottomLeftRadius: BAG_WIDTH / 3,
-    borderBottomRightRadius: BAG_WIDTH / 3,
+    borderTopLeftRadius: BAG_WIDTH / 2.3,
+    borderTopRightRadius: BAG_WIDTH / 2.3,
+    borderBottomLeftRadius: BAG_WIDTH / 2.8,
+    borderBottomRightRadius: BAG_WIDTH / 2.8,
     overflow: 'hidden',
   },
-  bagCap: {
+  bagCollar: {
     width: BAG_WIDTH,
-    height: 14,
-    backgroundColor: '#6B1414',
+    height: 18,
+    backgroundColor: BAG_DARK,
     borderBottomWidth: 2,
-    borderBottomColor: '#4a1010',
+    borderBottomColor: BAG_DARKER,
   },
-  bagHighlight: {
+  collarStrap: {
     position: 'absolute',
-    left: BAG_WIDTH * 0.22,
-    top: 20,
-    width: 12,
-    height: BAG_HEIGHT - 50,
-    backgroundColor: BAG_HIGHLIGHT,
-    borderRadius: 6,
-    opacity: 0.4,
+    top: 7,
+    left: 10,
+    right: 10,
+    height: 2,
+    backgroundColor: BAG_DARKER,
+    borderRadius: 1,
+  },
+  bagHighlightL: {
+    position: 'absolute',
+    left: BAG_WIDTH * 0.18,
+    top: 26,
+    width: 14,
+    height: BAG_HEIGHT - 60,
+    backgroundColor: '#A52222',
+    borderRadius: 7,
+    opacity: 0.35,
+  },
+  bagShadowR: {
+    position: 'absolute',
+    right: BAG_WIDTH * 0.12,
+    top: 30,
+    width: 18,
+    height: BAG_HEIGHT - 70,
+    backgroundColor: '#5a1010',
+    borderRadius: 9,
+    opacity: 0.25,
   },
   bagSeam: {
     position: 'absolute',
     left: BAG_WIDTH / 2 - 0.5,
-    top: 16,
+    top: 20,
     width: 1,
-    height: BAG_HEIGHT - 40,
-    backgroundColor: '#5a1515',
+    height: BAG_HEIGHT - 44,
+    backgroundColor: '#6a1818',
+    opacity: 0.5,
+  },
+  brandArea: {
+    position: 'absolute',
+    top: BAG_HEIGHT * 0.38,
+    left: BAG_WIDTH * 0.3,
+    right: BAG_WIDTH * 0.3,
+    height: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  brandLine: {
+    width: '80%',
+    height: 1.5,
+    backgroundColor: BAG_DARK,
+    borderRadius: 1,
     opacity: 0.6,
   },
+  // ── Bottom cap ──
   bagBottom: {
-    width: BAG_WIDTH * 0.7,
-    height: 10,
-    backgroundColor: '#6B1414',
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
+    width: BAG_WIDTH * 0.65,
+    height: 14,
+    backgroundColor: BAG_DARK,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
     alignSelf: 'center',
     marginTop: -2,
+    overflow: 'hidden',
   },
+  bottomStrap: {
+    position: 'absolute',
+    top: 5,
+    left: 8,
+    right: 8,
+    height: 2,
+    backgroundColor: BAG_DARKER,
+    borderRadius: 1,
+  },
+  // ── Bottom row ──
   bottomRow: {
     flexDirection: 'row',
     alignItems: 'center',
