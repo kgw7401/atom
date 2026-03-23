@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import random
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -47,18 +49,70 @@ class SessionService:
                     )
                 )
                 day_template = result.scalar_one_or_none()
+                # Fall back to week 1 templates if current week has none
+                if day_template is None and progress.week > 1:
+                    result = await self.session.execute(
+                        select(ProgramDayTemplate).where(
+                            ProgramDayTemplate.level == progress.level,
+                            ProgramDayTemplate.week == 1,
+                            ProgramDayTemplate.day_number == progress.current_day,
+                        )
+                    )
+                    day_template = result.scalar_one_or_none()
 
         if day_template:
-            return await self._generate_from_program(day_template, rest_sec, template_svc)
+            week_number = progress.week if progress else 1
+            return await self._generate_from_program(day_template, rest_sec, template_svc, week_number)
 
         # Fallback to old random template system
         return await self._generate_random(level, rounds, round_duration_sec, rest_sec, template_svc)
+
+    @staticmethod
+    def _pick_coach_comment(template: ProgramDayTemplate, week_number: int) -> str:
+        """Select coach comment variant based on week number."""
+        if template.coach_comments_json:
+            variants = template.coach_comments_json
+            return variants[(week_number - 1) % len(variants)]
+        return template.coach_comment
+
+    @staticmethod
+    def _shuffle_segments(segments: list[dict]) -> list[dict]:
+        """Shuffle combo segments while keeping cues evenly distributed.
+
+        Separates combo segments from cue segments, shuffles combos,
+        then re-interleaves cues at regular intervals.
+        """
+        combos = [s for s in segments if not s.get("is_cue")]
+        cues = [s for s in segments if s.get("is_cue")]
+
+        if not combos or not cues:
+            # Nothing meaningful to shuffle
+            random.shuffle(combos)
+            return combos + cues
+
+        random.shuffle(combos)
+
+        # Re-interleave cues at regular intervals
+        gap = max(1, len(combos) // (len(cues) + 1))
+        result: list[dict] = []
+        cue_idx = 0
+        for i, combo in enumerate(combos):
+            result.append(combo)
+            if cue_idx < len(cues) and (i + 1) % gap == 0 and i + 1 < len(combos):
+                result.append(cues[cue_idx])
+                cue_idx += 1
+        # Append any remaining cues
+        while cue_idx < len(cues):
+            result.append(cues[cue_idx])
+            cue_idx += 1
+        return result
 
     async def _generate_from_program(
         self,
         day_template: ProgramDayTemplate,
         rest_sec: int,
         template_svc: TemplateService,
+        week_number: int = 1,
     ) -> dict:
         """Build session plan from a ProgramDayTemplate with round-specific segments."""
         # Build rounds from predetermined segments
@@ -70,13 +124,16 @@ class SessionService:
 
         rounds_list = []
         for round_num, segments_data in round_configs:
+            # Shuffle segments within the round for variety
+            shuffled = self._shuffle_segments(list(segments_data))
+
             round_segments = []
-            for seg in segments_data:
+            for seg in shuffled:
                 text = seg["text"]
                 chunks = await template_svc._resolve_chunks(text, {})
                 round_segments.append({"text": text, "chunks": chunks})
 
-            # Merge finisher segments into R3
+            # Merge finisher segments into R3 (finisher stays in order)
             if round_num == 3:
                 finisher_data = day_template.finisher_json
                 for seg in finisher_data["segments"]:
@@ -127,7 +184,7 @@ class SessionService:
             "audio_ready": audio_ready,
             "day_number": day_template.day_number,
             "theme": day_template.theme,
-            "coach_comment": day_template.coach_comment,
+            "coach_comment": self._pick_coach_comment(day_template, week_number),
         }
 
     async def _generate_random(

@@ -115,6 +115,7 @@ class ProgramDayTemplate(Base):
     theme: Mapped[str] = mapped_column(String(100), nullable=False)
     theme_description: Mapped[str] = mapped_column(Text, nullable=False, default="")
     coach_comment: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    coach_comments_json: Mapped[list | None] = mapped_column(JSON, default=None)  # ["variant1", "variant2", ...]
     r1_segments_json: Mapped[dict] = mapped_column(JSON, nullable=False)  # [{combo, is_cue}, ...]
     r2_segments_json: Mapped[dict] = mapped_column(JSON, nullable=False)
     r3_segments_json: Mapped[dict] = mapped_column(JSON, nullable=False)

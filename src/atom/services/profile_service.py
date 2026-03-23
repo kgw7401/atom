@@ -124,17 +124,17 @@ class ProfileService:
             progress.completed_at = datetime.now(timezone.utc)
 
             if has_next_week:
-                # Advance to next week
+                # Advance to next week (real templates exist)
                 new_progress = ProgramProgress(
                     level=progress.level,
                     week=next_week,
                     current_day=1,
                 )
             else:
-                # Cycle back to Day 1 of same week
+                # Cycle: increment week counter (templates fall back to week 1)
                 new_progress = ProgramProgress(
                     level=progress.level,
-                    week=progress.week,
+                    week=next_week,
                     current_day=1,
                 )
             self.session.add(new_progress)
@@ -162,44 +162,34 @@ class ProfileService:
             await self.session.commit()
             await self.session.refresh(progress)
 
-        # Get today's template
-        result = await self.session.execute(
-            select(ProgramDayTemplate).where(
-                ProgramDayTemplate.level == progress.level,
-                ProgramDayTemplate.week == progress.week,
-                ProgramDayTemplate.day_number == progress.current_day,
-            )
+        # Get today's template (fall back to week 1 if current week has no templates)
+        template = await self._lookup_template(
+            progress.level, progress.week, progress.current_day,
         )
-        template = result.scalar_one_or_none()
 
         theme = template.theme if template else "훈련"
         theme_desc = template.theme_description if template else ""
+
+        # Select coach comment variant based on week cycle
         coach_comment = template.coach_comment if template else "오늘도 화이팅!"
+        if template and template.coach_comments_json:
+            variants = template.coach_comments_json
+            coach_comment = variants[(progress.week - 1) % len(variants)]
 
         # Next day preview (cycles back to Day 1 after Day 7)
         next_preview = None
         if progress.current_day < 7:
             next_day = progress.current_day + 1
-            result = await self.session.execute(
-                select(ProgramDayTemplate).where(
-                    ProgramDayTemplate.level == progress.level,
-                    ProgramDayTemplate.week == progress.week,
-                    ProgramDayTemplate.day_number == next_day,
-                )
+            next_template = await self._lookup_template(
+                progress.level, progress.week, next_day,
             )
-            next_template = result.scalar_one_or_none()
             if next_template:
                 next_preview = {"day_number": next_day, "theme": next_template.theme}
         else:
-            # Day 7: preview Day 1 (cycle restart)
-            result = await self.session.execute(
-                select(ProgramDayTemplate).where(
-                    ProgramDayTemplate.level == progress.level,
-                    ProgramDayTemplate.week == progress.week,
-                    ProgramDayTemplate.day_number == 1,
-                )
+            # Day 7: preview Day 1 of next week cycle
+            next_template = await self._lookup_template(
+                progress.level, progress.week, 1,
             )
-            next_template = result.scalar_one_or_none()
             if next_template:
                 next_preview = {"day_number": 1, "theme": next_template.theme, "is_cycle_restart": True}
 
@@ -214,6 +204,29 @@ class ProfileService:
             "week": progress.week,
             "next_day_preview": next_preview,
         }
+
+    async def _lookup_template(
+        self, level: str, week: int, day_number: int,
+    ) -> ProgramDayTemplate | None:
+        """Look up a program day template, falling back to week 1 if needed."""
+        result = await self.session.execute(
+            select(ProgramDayTemplate).where(
+                ProgramDayTemplate.level == level,
+                ProgramDayTemplate.week == week,
+                ProgramDayTemplate.day_number == day_number,
+            )
+        )
+        template = result.scalar_one_or_none()
+        if template is None and week > 1:
+            result = await self.session.execute(
+                select(ProgramDayTemplate).where(
+                    ProgramDayTemplate.level == level,
+                    ProgramDayTemplate.week == 1,
+                    ProgramDayTemplate.day_number == day_number,
+                )
+            )
+            template = result.scalar_one_or_none()
+        return template
 
     async def list_sessions(self, limit: int = 20, offset: int = 0) -> list[SessionLog]:
         result = await self.session.execute(
