@@ -25,13 +25,33 @@ class ProfileService:
             profile = UserProfile(**kwargs)
             self.session.add(profile)
         else:
+            old_level = profile.experience_level
             allowed = {"experience_level", "goal", "training_preference"}
             for k, v in kwargs.items():
                 if k in allowed and v is not None:
                     setattr(profile, k, v)
+
+            # Reset program progress when level changes
+            new_level = kwargs.get("experience_level")
+            if new_level and new_level != old_level:
+                await self._reset_progress_for_level(new_level)
+
         await self.session.commit()
         await self.session.refresh(profile)
         return profile
+
+    async def _reset_progress_for_level(self, new_level: str) -> None:
+        """Complete current progress and start fresh at the new level."""
+        from datetime import datetime, timezone
+
+        result = await self.session.execute(
+            select(ProgramProgress).where(ProgramProgress.completed_at.is_(None))
+        )
+        current = result.scalar_one_or_none()
+        if current:
+            current.completed_at = datetime.now(timezone.utc)
+
+        self.session.add(ProgramProgress(level=new_level, week=1, current_day=1))
 
     async def aggregate(self) -> UserProfile:
         """Re-compute profile stats from all session logs."""

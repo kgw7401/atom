@@ -40,11 +40,7 @@ export default function SessionEndScreen({ route, navigation }: Props) {
 
   const isCompleted = status === 'completed';
   const streak = todayData?.streak ?? 0;
-  const dayNumber = todayData?.day_number ?? 1;
-  const dayTotal = todayData?.day_total ?? 7;
   const coachComment = planResponse?.coach_comment || todayData?.coach_comment || '';
-  const nextPreview = todayData?.next_day_preview;
-  const theme = planResponse?.theme || todayData?.theme || '';
 
   const durationMin = Math.floor((duration ?? 0) / 60);
   const durationSec = (duration ?? 0) % 60;
@@ -83,27 +79,8 @@ export default function SessionEndScreen({ route, navigation }: Props) {
         </Animated.View>
       ) : null}
 
-      {/* Day Progress */}
-      {isCompleted ? (
-        <Animated.View entering={FadeInDown.delay(800)} style={styles.progressSection}>
-          <View style={styles.dots}>
-            {Array.from({ length: dayTotal }, (_, i) => (
-              <View
-                key={i}
-                style={[
-                  styles.dot,
-                  i < dayNumber && styles.dotCompleted,
-                  i >= dayNumber && styles.dotPending,
-                ]}
-              />
-            ))}
-          </View>
-          <Text style={styles.dayLabel}>Day {dayNumber} / {dayTotal} 완료</Text>
-        </Animated.View>
-      ) : null}
-
       {/* Session Stats */}
-      <Animated.View entering={FadeInDown.delay(1000)} style={styles.statsRow}>
+      <Animated.View entering={FadeInDown.delay(800)} style={styles.statsRow}>
         <View style={styles.statItem}>
           <Text style={styles.statValue}>3R</Text>
           <Text style={styles.statLabel}>라운드</Text>
@@ -120,23 +97,8 @@ export default function SessionEndScreen({ route, navigation }: Props) {
         </View>
       </Animated.View>
 
-      {/* Next Day Preview */}
-      {isCompleted && nextPreview ? (
-        <Animated.View entering={FadeInDown.delay(1200)} style={styles.nextCard}>
-          <Text style={styles.nextLabel}>
-            {nextPreview.is_cycle_restart ? '다음 사이클' : '내일'}
-          </Text>
-          <Text style={styles.nextText}>
-            Day {nextPreview.day_number} — {nextPreview.theme}
-          </Text>
-          {nextPreview.is_cycle_restart ? (
-            <Text style={styles.cycleNote}>프로그램을 다시 시작합니다</Text>
-          ) : null}
-        </Animated.View>
-      ) : null}
-
       {/* Home Button */}
-      <Animated.View entering={FadeIn.delay(1400)} style={styles.actions}>
+      <Animated.View entering={FadeIn.delay(1000)} style={styles.actions}>
         <TouchableOpacity
           style={styles.homeBtn}
           onPress={() => navigation.popToTop()}
@@ -214,34 +176,6 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
 
-  // Progress
-  progressSection: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  dots: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 8,
-  },
-  dot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-  },
-  dotCompleted: {
-    backgroundColor: COLORS.RED,
-  },
-  dotPending: {
-    backgroundColor: COLORS.SURFACE,
-    borderWidth: 1,
-    borderColor: COLORS.BORDER,
-  },
-  dayLabel: {
-    ...TYPOGRAPHY.META,
-    color: COLORS.TEXT_2,
-  },
-
   // Stats
   statsRow: {
     flexDirection: 'row',
@@ -269,32 +203,6 @@ const styles = StyleSheet.create({
     width: 1,
     height: 30,
     backgroundColor: COLORS.BORDER,
-  },
-
-  // Next day
-  nextCard: {
-    backgroundColor: COLORS.SURFACE,
-    borderRadius: SPACING.RADIUS_CARD,
-    padding: SPACING.PADDING_CARD,
-    borderWidth: 1,
-    borderColor: COLORS.BORDER,
-    width: '100%',
-    marginBottom: 24,
-    alignItems: 'center',
-  },
-  nextLabel: {
-    ...TYPOGRAPHY.SECTION_LABEL,
-    color: COLORS.TEXT_3,
-    marginBottom: 4,
-  },
-  nextText: {
-    ...TYPOGRAPHY.CARD_TITLE,
-    color: COLORS.TEXT_1,
-  },
-  cycleNote: {
-    ...TYPOGRAPHY.META,
-    color: COLORS.TEXT_3,
-    marginTop: 4,
   },
 
   // Actions

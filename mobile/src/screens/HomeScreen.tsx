@@ -1,16 +1,50 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 import { COLORS, TYPOGRAPHY, SPACING } from '../theme';
 import { fetchToday, generatePlan, TodayData } from '../api/session';
+import { updateProfile } from '../api/profile';
 
 type Props = { navigation: NativeStackNavigationProp<any> };
+
+const LEVELS = ['beginner', 'intermediate', 'advanced'] as const;
+const LEVEL_LABELS: Record<string, string> = {
+  beginner: '입문',
+  novice: '입문',
+  intermediate: '중급',
+  advanced: '고급',
+};
 
 export default function HomeScreen({ navigation }: Props) {
   const [today, setToday] = useState<TodayData | null>(null);
   const [loading, setLoading] = useState(true);
   const [starting, setStarting] = useState(false);
+
+  const handleLevelChange = () => {
+    const raw = today?.level ?? 'beginner';
+    const current = raw === 'novice' ? 'beginner' : raw;
+    const options = LEVELS.filter((l) => l !== current);
+    Alert.alert(
+      '레벨 변경',
+      `현재: ${LEVEL_LABELS[current]}`,
+      [
+        ...options.map((lvl) => ({
+          text: LEVEL_LABELS[lvl],
+          onPress: async () => {
+            try {
+              await updateProfile({ experience_level: lvl });
+              const data = await fetchToday();
+              setToday(data);
+            } catch (e) {
+              console.error('Level change failed:', e);
+            }
+          },
+        })),
+        { text: '취소', style: 'cancel' as const },
+      ],
+    );
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -46,37 +80,24 @@ export default function HomeScreen({ navigation }: Props) {
   }
 
   const streak = today?.streak ?? 0;
-  const dayNumber = today?.day_number ?? 1;
-  const dayTotal = today?.day_total ?? 7;
 
   return (
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.logo}>ATOM</Text>
-        {streak > 0 && (
-          <View style={styles.streakBadge}>
-            <Text style={styles.streakText}>{streak}일 연속</Text>
-          </View>
-        )}
-      </View>
-
-      {/* Day Progress */}
-      <View style={styles.progressSection}>
-        <Text style={styles.sectionLabel}>WEEK {today?.week ?? 1}</Text>
-        <View style={styles.dots}>
-          {Array.from({ length: dayTotal }, (_, i) => (
-            <View
-              key={i}
-              style={[
-                styles.dot,
-                i < dayNumber - 1 && styles.dotCompleted,
-                i === dayNumber - 1 && styles.dotCurrent,
-              ]}
-            />
-          ))}
+        <View style={styles.headerRight}>
+          <TouchableOpacity style={styles.levelBadge} onPress={handleLevelChange}>
+            <Text style={styles.levelText}>
+              {LEVEL_LABELS[today?.level ?? 'beginner']}
+            </Text>
+          </TouchableOpacity>
+          {streak > 0 && (
+            <View style={styles.streakBadge}>
+              <Text style={styles.streakText}>{streak}일 연속</Text>
+            </View>
+          )}
         </View>
-        <Text style={styles.dayLabel}>Day {dayNumber} / {dayTotal}</Text>
       </View>
 
       {/* Today's Theme */}
@@ -95,13 +116,6 @@ export default function HomeScreen({ navigation }: Props) {
 
       {/* Spacer */}
       <View style={{ flex: 1 }} />
-
-      {/* Next Day Preview */}
-      {today?.next_day_preview && (
-        <Text style={styles.nextPreview}>
-          내일: Day {today.next_day_preview.day_number} — {today.next_day_preview.theme}
-        </Text>
-      )}
 
       {/* Start Button */}
       <TouchableOpacity
@@ -138,6 +152,24 @@ const styles = StyleSheet.create({
     ...TYPOGRAPHY.APP_TITLE,
     color: COLORS.RED,
   },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  levelBadge: {
+    backgroundColor: COLORS.SURFACE,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: SPACING.RADIUS_BADGE,
+    borderWidth: 1,
+    borderColor: COLORS.TEXT_3,
+  },
+  levelText: {
+    color: COLORS.TEXT_2,
+    ...TYPOGRAPHY.META,
+    fontWeight: '700',
+  },
   streakBadge: {
     backgroundColor: COLORS.SURFACE,
     paddingHorizontal: 14,
@@ -150,41 +182,6 @@ const styles = StyleSheet.create({
     color: COLORS.ORANGE,
     ...TYPOGRAPHY.META,
     fontWeight: '700',
-  },
-  progressSection: {
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  sectionLabel: {
-    ...TYPOGRAPHY.SECTION_LABEL,
-    color: COLORS.TEXT_3,
-    marginBottom: 12,
-  },
-  dots: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 8,
-  },
-  dot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: COLORS.SURFACE,
-    borderWidth: 1,
-    borderColor: COLORS.BORDER,
-  },
-  dotCompleted: {
-    backgroundColor: COLORS.RED,
-    borderColor: COLORS.RED,
-  },
-  dotCurrent: {
-    backgroundColor: COLORS.BG,
-    borderColor: COLORS.RED,
-    borderWidth: 2,
-  },
-  dayLabel: {
-    ...TYPOGRAPHY.META,
-    color: COLORS.TEXT_2,
   },
   themeSection: {
     alignItems: 'center',
@@ -215,12 +212,6 @@ const styles = StyleSheet.create({
   coachText: {
     ...TYPOGRAPHY.COACH_BODY,
     color: COLORS.TEXT_1,
-  },
-  nextPreview: {
-    ...TYPOGRAPHY.META,
-    color: COLORS.TEXT_3,
-    textAlign: 'center',
-    marginBottom: 16,
   },
   startBtn: {
     backgroundColor: COLORS.RED,
