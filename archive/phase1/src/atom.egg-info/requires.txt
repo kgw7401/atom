@@ -1,0 +1,13 @@
+mediapipe>=0.10
+opencv-python>=4.8
+numpy>=1.24
+pyyaml>=6.0
+
+[dev]
+pytest>=7.0
+ruff>=0.1
+
+[ml]
+scikit-learn>=1.3
+torch>=2.0
+pyarrow>=14.0

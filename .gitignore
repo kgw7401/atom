@@ -1,33 +1,41 @@
-.omc/
+# Data & large files — local only, not uploaded to GitHub
+archive/data/
+archive/phase1/data/
+archive/*.task
+archive/*.tar.gz
+
+# Videos & raw media
+*.MOV
+*.mov
+*.mp4
+*.avi
+
+# ML model files
+*.task
+*.pkl
+*.h5
+
+# Databases
+*.db
+*.sqlite
+/data/
+!/data/audio/
+!/data/audio/chunks/
 
 # Python
-__pycache__/
-*.py[cod]
-*.egg-info/
-dist/
-build/
-*.egg
 .venv/
-venv/
-
-# Data (large files - keep structure, not content)
-data/raw/**/*.mp4
-data/raw/**/*.avi
-data/raw/**/*.mov
-# data/keypoints/ — committed (small, ~300KB each)
-data/processed/**/*.parquet
-
-# IDE
-.vscode/
-.idea/
-*.swp
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+*.egg-info/
 
 # OS
 .DS_Store
-Thumbs.db
 
-# Models (large binary files)
-models/*.task
+# Mobile
+mobile/node_modules/
 
-# Misc
-*.log
+# Environment variables
+.env
