@@ -1,0 +1,55 @@
+{
+  "metadata": {
+    "created_at": "2026-07-10T05:33:56.427059+00:00",
+    "model": "gemini-3.5-flash",
+    "source_video": "IMG_0574.mp4",
+    "source_video_bytes": 80703304,
+    "fighter_description": "검은 티셔츠와 파란 헤드기어를 착용한 선수",
+    "context": null
+  },
+  "analysis": {
+    "video_summary": "검은 티셔츠와 파란 헤드기어를 착용한 선수가 흰색 티셔츠의 상대와 스파링을 진행하고 있습니다. 상대의 전진 압박에 주로 직선으로 물러서며 방어적인 흐름을 보이고 있으며, 후반부에 코너에 몰려 연타를 허용하는 상황이 발생합니다.",
+    "meaningful_exchanges": [
+      {
+        "start_time": "00:00",
+        "end_time": "00:02",
+        "opponent_trigger": "상대방이 오른손 스트레이트성 공격을 시도하며 진입함.",
+        "my_response": "가드로 방어한 뒤 가볍게 뒤로 물러서며 안정적인 거리를 유지함.",
+        "problem_category": "no_issue",
+        "visual_evidence": "상대의 오른손 공격을 가드로 막아낸 직후 뒤로 반 보 스텝을 밟으며 거리를 벌림.",
+        "confidence": "high"
+      },
+      {
+        "start_time": "00:09",
+        "end_time": "00:12",
+        "opponent_trigger": "상대방이 왼손 잽을 길게 던지며 진입함.",
+        "my_response": "덕킹 동작으로 머리를 숙여 회피했으나, 회피 이후 상대가 가까이 있음에도 반격이나 사이드 이동 없이 제자리에 멈춰 섬.",
+        "problem_category": "post_defense_inaction",
+        "visual_evidence": "덕킹 회피 직후 가드를 높게 올린 채 약 1~2초간 상대 앞에서 아무런 움직임 없이 멈춰 서 있음.",
+        "confidence": "high"
+      },
+      {
+        "start_time": "00:20",
+        "end_time": "00:26",
+        "opponent_trigger": "상대방이 잽과 스트레이트 연타를 치며 강하게 압박해 옴.",
+        "my_response": "사이드로 빠져나갈 공간이 있음에도 직선 방향으로만 계속 뒤로 물러나다 코너 구석에 갇혀 방어만 함.",
+        "problem_category": "retreat_pattern",
+        "visual_evidence": "상대의 연타가 시작되자 몸을 웅크린 채 직선으로만 뒤로 밀려나 결국 링 코너에 닿았고, 코너에서 가드만 올린 채 상대를 빠져나오지 못함.",
+        "confidence": "high"
+      }
+    ],
+    "repeated_pattern": {
+      "category": "retreat_pattern",
+      "description": "상대방이 전진하며 압박하거나 연타를 시도할 때, 측면(사이드) 공간을 활용하여 탈출하지 않고 일직선으로만 뒤로 물러나다 코너나 로프에 쉽게 갇히는 경향이 있습니다.",
+      "supporting_timestamps": [
+        "00:04",
+        "00:20"
+      ]
+    },
+    "next_round_rule": "상대가 압박하며 들어올 때 뒤로 물러나지 말고, 좌우 양옆 중 비어 있는 공간으로 사이드 스텝(피벗)을 밟으며 코너를 벗어나세요.",
+    "limitations": [
+      "카메라가 고정되어 있어 링 구석(코너)에서 가드 사이로 펀치가 정타로 들어갔는지 여부는 시야가 가려져 명확히 파악하기 어렵습니다.",
+      "원거리 촬영 특성상 선수들의 미세한 시선 처리나 상체 페인팅 모션을 완전히 식별하는 데 제한이 있습니다."
+    ]
+  }
+}
