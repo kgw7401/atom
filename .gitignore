@@ -1,4 +1,19 @@
 .env
+.DS_Store
 __pycache__/
 .mypy_cache/
+.pytest_cache/
 .venv/
+.omc/
+
+# Local media, datasets, model weights, and generated runs
+videos/
+benchmarks/
+data/
+checkpoints/
+runs/
+*.mp4
+*.mov
+*.pkl
+*.pt
+*.pth

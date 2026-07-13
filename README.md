@@ -1,50 +1,36 @@
-# Gemini Sparring Analyzer
+# Atom
 
-A small personal-analysis CLI for boxing sparring video. It uploads one video to the Gemini Files API, waits for processing to complete, asks Gemini for structured decision-making feedback, saves the result as JSON, and deletes the remote file by default.
+개인 스파링 영상에서 압박 상황의 의사결정을 분석하고, 다음 라운드에서 실행할 한 가지 행동 규칙으로 바꾸는 프로젝트다.
 
-## Setup
+현재는 제품이나 자동 채점 시스템을 만드는 단계가 아니다. 먼저 다음 질문을 검증한다.
 
-1. Create a Gemini API key in [Google AI Studio](https://aistudio.google.com/app/apikey).
-2. Change into this directory, create the project virtual environment, and install the dependency:
+> 영상에서 실제로 판단을 놓친 장면을 시간 근거와 함께 찾고, 다음 라운드에서 시험할 수 있는 피드백으로 바꿀 수 있는가?
 
-   ```bash
-   cd /Users/kgw7401/atom
-   python3 -m venv .venv
-   .venv/bin/python -m pip install -r requirements.txt
-   ```
+## 현재 기술 방향
 
-3. Export the API key for the current shell. Do not put it in source code or commit it.
-
-   ```bash
-   export GEMINI_API_KEY="your-key"
-   ```
-
-## Analyze One Round
-
-```bash
-.venv/bin/python analyze_sparring.py /path/to/round.mp4 \
-  --me "blue headgear and black T-shirt" \
-  --context "I freeze after defending against pressure"
-```
-
-The default output is next to the input video:
+관찰의 중심은 범용 VLM이 아니라 모션과 복싱 이벤트를 추출하는 전용 CV 파이프라인이다.
 
 ```text
-round.analysis.json
+스파링 영상
+  -> 선수 추적과 포즈/모션
+  -> 펀치와 방어, 풋워크 이벤트
+  -> 거리와 압박 상태
+  -> 상대 행동 -> 나의 선택 -> 결과
+  -> 반복 패턴 하나
+  -> 다음 라운드 행동 규칙 하나
 ```
 
-The JSON contains the candidate exchange timestamps, visible opponent trigger, your visible response, category, confidence, repeated pattern, one next-round rule, and model limitations.
+BoxMind의 `atomic event -> tactical indicator -> strategy` 분해를 출발점으로 삼는다. 로컬에 확보한 공식 BoxingWeb 데이터셋으로 펀치 이벤트 계층을 먼저 재현하고, 개인 스파링에 필요한 방어·풋워크·의사결정 계층을 추가한다.
 
-## Options
+VLM/LLM은 영상 속 사실을 단독 판정하지 않는다. 이후 구조화된 이벤트를 설명하거나 낮은 확신도의 장면을 보조 검토하는 역할로 제한한다.
 
-```bash
-.venv/bin/python analyze_sparring.py --help
-```
+## 문서
 
-Use `--keep-remote-file` only when you intentionally want to reuse the file for another request. Otherwise the script deletes it after analysis. Gemini also automatically deletes Files API uploads after 48 hours.
+- [프로젝트 방향](docs/project-direction.md): 바뀌지 않는 목표, 검증 루프, 성공 기준
+- [실험 기록](docs/experiment-history.md): Gemini/VLM 실험 결과와 기술 방향을 바꾼 근거
+- [BoxMind 재현 계획](docs/boxmind-baseline-plan.md): BoxingWeb 자산, 구현 단계, 단계별 검증 기준
+- [첫 영상 피드백](results/IMG_0574.feedback.md): 초기 Gemini 분석과 사용자 검토 기록
 
-## First Test
+## 현재 상태
 
-Use one 2-3 minute round where both boxers and their feet remain in frame. Pass a concrete description in `--me`; do not rely on "the boxer on the left", since positions change during sparring.
-
-The output is evidence for review, not ground truth. Verify the listed timestamps yourself. Gemini's default video sampling can miss fast punch-level details, so interpret the output as decision-sequence feedback rather than exact punch or scoring analysis.
+본격적인 구현 전 기술 방향을 정리한 상태다. 다음 작업은 BoxingWeb 데이터와 공식 코드를 점검하고, 주어진 펀치 구간의 속성 분류 베이스라인을 재현하는 것이다.
