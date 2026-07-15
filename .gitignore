@@ -12,6 +12,9 @@ benchmarks/
 data/
 checkpoints/
 runs/
+results/boxingweb-oracle-*.json
+results/boxingweb-audit.json
+results/pose-baseline-errors.json
 *.mp4
 *.mov
 *.pkl

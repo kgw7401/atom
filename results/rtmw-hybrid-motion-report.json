@@ -1,0 +1,99 @@
+{
+  "created_at": "2026-07-15T16:57:28.592253+00:00",
+  "model": "boxmind-paper-form-anchor-free-tcn-v2",
+  "scope": "Independent per-boxer full-round extracted RTMW 2D pose detection.",
+  "configuration": {
+    "data_root": "/Users/kgw7401/boxingweb",
+    "pose_root": "/private/tmp/atom-rtmw-dataset",
+    "epochs": 3,
+    "batch_size": 8,
+    "window": 128,
+    "learning_rate": 0.001,
+    "focal_alpha": 0.9,
+    "focal_gamma": 2.0,
+    "offset_scale": 32.0,
+    "regression_weight": 1.0,
+    "regression_loss": "smooth_l1",
+    "channels": 64,
+    "batch_norm": false,
+    "feature_clip": 10.0,
+    "normalization": "standard",
+    "pose_channels": 2,
+    "feature_mode": "hybrid-motion",
+    "include_opponent": false,
+    "train_all": false,
+    "fixed_threshold": 0.8,
+    "fixed_nms_iou": 0.3,
+    "device": "mps",
+    "seed": 1,
+    "report": "/tmp/rtmw-hybrid-motion-report.json",
+    "checkpoint": "/tmp/rtmw-hybrid-motion.pt"
+  },
+  "samples": {
+    "train_matches": 36,
+    "validation_matches": 4,
+    "test_matches": 10
+  },
+  "validation_iou_0.5": {
+    "precision": 0.6947368421052632,
+    "recall": 0.5919282511210763,
+    "f1": 0.6392251815980631,
+    "tp": 264,
+    "fp": 116,
+    "fn": 182
+  },
+  "selected_threshold": 0.8,
+  "selected_nms_iou": 0.3,
+  "test_iou_0.5": {
+    "precision": 0.6950980392156862,
+    "recall": 0.5835390946502058,
+    "f1": 0.6344519015659956,
+    "tp": 709,
+    "fp": 311,
+    "fn": 506
+  },
+  "history": [
+    {
+      "epoch": 1,
+      "loss": 0.028309336925495268,
+      "validation": {
+        "precision": 0.5926773455377574,
+        "recall": 0.5807174887892377,
+        "f1": 0.5866364665911664,
+        "tp": 259,
+        "fp": 178,
+        "fn": 187
+      },
+      "threshold": 0.7,
+      "nms_iou": 0.3
+    },
+    {
+      "epoch": 2,
+      "loss": 0.020629737590896088,
+      "validation": {
+        "precision": 0.6545454545454545,
+        "recall": 0.5650224215246636,
+        "f1": 0.6064981949458483,
+        "tp": 252,
+        "fp": 133,
+        "fn": 194
+      },
+      "threshold": 0.8,
+      "nms_iou": 0.3
+    },
+    {
+      "epoch": 3,
+      "loss": 0.017222966976221773,
+      "validation": {
+        "precision": 0.6947368421052632,
+        "recall": 0.5919282511210763,
+        "f1": 0.6392251815980631,
+        "tp": 264,
+        "fp": 116,
+        "fn": 182
+      },
+      "threshold": 0.8,
+      "nms_iou": 0.3
+    }
+  ]
+}

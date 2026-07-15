@@ -32,7 +32,12 @@ VLM/LLM은 영상 속 사실을 단독 판정하지 않는다. 구조화된 이�
 - [실험 기록](docs/experiment-history.md): Gemini/VLM 실험 결과와 기술 방향을 바꾼 근거
 - [BoxMind 재현 계획](docs/boxmind-baseline-plan.md): BoxingWeb 자산, 구현 단계, 단계별 검증 기준
 - [첫 영상 피드백](results/IMG_0574.feedback.md): 초기 Gemini 분석과 사용자 검토 기록
+- [첫 속성 분류 기준선 결과](results/pose-baseline-report.json): pose-only 모델의 test 성능
+- [GT pose 이벤트 검출 결과](results/pose-event-detector-pose-report.json): pose-only 시간적 펀치 검출 성능
+- [RGB 융합 실험 결과](results/pose-event-detector-rgb-report.json): pose-guided RGB 움직임 특징 결합 성능
+- [영상 포즈 이벤트 검출 결과](results/video-pose-event-detection-report.json): YOLO+RTMW3D 실제 MP4 전처리와 GT/영상 포즈 비교
+- [RTMW 재학습 결과](results/rtmw-adapted-event-detection-report.json): 전체 50경기 영상 포즈 추출, RTMW 분포 재학습 및 앙상블 평가
 
 ## 현재 상태
 
-본격적인 구현 전 기술 방향을 정리한 상태다. 다음 작업은 BoxingWeb 데이터와 공식 코드를 점검하고, 주어진 펀치 구간의 속성 분류 베이스라인을 재현하는 것이다.
+BoxingWeb의 구조 감사와 GT pose 검증을 완료했다. BoxMind 형태의 독립 선수별 anchor-free TCN은 전체 test에서 2D+3D pose F1 0.750, 2D-only F1 0.719를 기록했다. 이후 50경기 전체 MP4를 YOLO+RTMW-m으로 처리하고 같은 RTMW 분포로 재학습했다. actor-only 위치·움직임 특징과 GT 모델을 결합한 최종 앙상블은 temporal IoU 0.5에서 F1 0.679로, GT 2D 기준선의 94.5%를 회복했다. 단안 3D는 분포 불일치와 시간축 노이즈로 채택하지 않는다. 현재 평가는 GT를 red/blue 선수 대응에만 쓰므로 다음 작업은 UVE 외형 식별기를 구현해 oracle identity 의존성을 제거하는 것이다.

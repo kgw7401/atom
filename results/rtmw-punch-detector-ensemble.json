@@ -1,0 +1,27 @@
+{
+  "model": "rtmw-adapted-anchor-free-tcn-ensemble-v1",
+  "components": [
+    {
+      "checkpoint": "rtmw-hybrid-motion.pt",
+      "weight": 0.5
+    },
+    {
+      "checkpoint": "rtmw-absolute-actor.pt",
+      "weight": 0.25
+    },
+    {
+      "checkpoint": "boxmind-anchor-free-gt-pose-2d.pt",
+      "weight": 0.25
+    }
+  ],
+  "threshold": 0.7,
+  "nms_iou": 0.3,
+  "offset_scale": 32.0,
+  "selection": {
+    "split": "last 4 of 40 BoxingWeb training matches",
+    "temporal_iou": 0.5,
+    "precision": 0.6702355460385439,
+    "recall": 0.7017937219730942,
+    "f1": 0.6856516976998903
+  }
+}
