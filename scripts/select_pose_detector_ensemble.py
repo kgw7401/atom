@@ -23,20 +23,35 @@ from train_boxmind_anchor_free_detector import build_boxer_rounds, collect_logit
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--data-root", type=Path, required=True)
-    parser.add_argument("--pose-root", type=Path, required=True)
+    parser.add_argument(
+        "--pose-root", type=Path, action="append", required=True,
+        help="Pose root for each checkpoint; pass once to share one root or once per checkpoint.",
+    )
     parser.add_argument("--checkpoint", type=Path, action="append", required=True)
     parser.add_argument("--validation-matches", type=int, default=4)
     parser.add_argument("--weight-step", type=float, default=0.25)
+    parser.add_argument("--threshold-min", type=float, default=0.3)
+    parser.add_argument("--threshold-max", type=float, default=0.9)
+    parser.add_argument("--threshold-step", type=float, default=0.05)
+    parser.add_argument(
+        "--nms-iou", type=float, action="append",
+        help="NMS IoU candidate; repeat as needed. Defaults to 0.2, 0.3, 0.5, and 0.7.",
+    )
     parser.add_argument("--output", type=Path, required=True)
     return parser.parse_args()
 
 
-def validation_logits(args: argparse.Namespace, checkpoint_path: Path, validation_ids: set[str]):
+def validation_logits(
+    args: argparse.Namespace,
+    checkpoint_path: Path,
+    pose_root: Path,
+    validation_ids: set[str],
+):
     checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
     rounds = build_boxer_rounds(
         args.data_root, "train", float(checkpoint["offset_scale"]),
         bool(checkpoint.get("include_opponent", False)), int(checkpoint.get("pose_channels", 5)),
-        args.pose_root, str(checkpoint.get("feature_mode", "absolute")),
+        pose_root, str(checkpoint.get("feature_mode", "absolute")),
     )
     rounds = [item for item in rounds if item[0] in validation_ids]
     model = build_punch_detector(
@@ -65,11 +80,20 @@ def weight_grid(count: int, step: float):
 
 def main() -> None:
     args = parse_args()
-    match_ids = sorted(path.stem for path in (args.pose_root / "train").glob("*.pkl"))
+    if len(args.pose_root) == 1:
+        pose_roots = args.pose_root * len(args.checkpoint)
+    elif len(args.pose_root) == len(args.checkpoint):
+        pose_roots = args.pose_root
+    else:
+        raise ValueError("Pass --pose-root once or exactly once per checkpoint")
+    match_ids = sorted(path.stem for path in (pose_roots[0] / "train").glob("*.pkl"))
     if len(match_ids) < args.validation_matches:
         raise ValueError("Not enough extracted training matches")
     validation_ids = set(match_ids[-args.validation_matches:])
-    loaded = [validation_logits(args, path, validation_ids) for path in args.checkpoint]
+    loaded = [
+        validation_logits(args, path, pose_root, validation_ids)
+        for path, pose_root in zip(args.checkpoint, pose_roots)
+    ]
     offset_scales = {float(checkpoint["offset_scale"]) for checkpoint, _ in loaded}
     if len(offset_scales) != 1:
         raise ValueError("All checkpoints must use the same offset scale")
@@ -83,8 +107,11 @@ def main() -> None:
                 raise ValueError("Checkpoint outputs are not aligned to the same boxer rounds")
             logits = sum(weight * item[1] for weight, item in zip(weights, items))
             outputs.append((side, logits, truth))
-        for threshold in np.arange(0.3, 0.91, 0.05):
-            for nms_iou in (0.2, 0.3, 0.5, 0.7):
+        thresholds = np.arange(
+            args.threshold_min, args.threshold_max + args.threshold_step * 0.5, args.threshold_step,
+        )
+        for threshold in thresholds:
+            for nms_iou in args.nms_iou or (0.2, 0.3, 0.5, 0.7):
                 score = score_logits(outputs, float(threshold), nms_iou, offset_scale)
                 candidate = (score["f1"], score["recall"], weights, float(threshold), nms_iou, score)
                 if best is None or candidate[:2] > best[:2]:
@@ -94,8 +121,13 @@ def main() -> None:
     payload = {
         "model": "rtmw-punch-detector-ensemble",
         "components": [
-            {"checkpoint": str(path.resolve()), "weight": weight}
-            for path, weight in zip(args.checkpoint, weights) if weight > 0
+            {
+                "checkpoint": str(path.resolve()),
+                "pose_root": str(pose_root.resolve()),
+                "pose_variant": pose_root.name,
+                "weight": weight,
+            }
+            for path, pose_root, weight in zip(args.checkpoint, pose_roots, weights) if weight > 0
         ],
         "threshold": threshold,
         "nms_iou": nms_iou,

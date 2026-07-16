@@ -1,27 +1,46 @@
 {
-  "model": "rtmw-adapted-anchor-free-tcn-ensemble-v1",
+  "model": "rtmw-cross-rate-kinematic-ensemble-v2",
   "components": [
     {
-      "checkpoint": "rtmw-hybrid-motion.pt",
-      "weight": 0.5
-    },
-    {
-      "checkpoint": "rtmw-absolute-actor.pt",
+      "checkpoint": "/Users/kgw7401/.local/share/atom-experiments/2026-07-16/artifacts/rtmw-composite-depth-motion.pt",
+      "pose_variant": "rtmw2d3d-stride3",
       "weight": 0.25
     },
     {
-      "checkpoint": "boxmind-anchor-free-gt-pose-2d.pt",
+      "checkpoint": "/Users/kgw7401/.local/share/atom-experiments/2026-07-16/artifacts/rtmw-composite-depth-bigru.pt",
+      "pose_variant": "rtmw2d3d-stride3",
+      "weight": 0.25
+    },
+    {
+      "checkpoint": "/Users/kgw7401/.local/share/atom-experiments/2026-07-16/artifacts/rtmw-fullrate-kinematic-relative-tcn-seed2.pt",
+      "pose_variant": "rtmw2d-fullrate",
+      "weight": 0.25
+    },
+    {
+      "checkpoint": "/Users/kgw7401/.local/share/atom-experiments/2026-07-16/artifacts/rtmw-fullrate-kinematic-relative-mstcn-seed1.pt",
+      "pose_variant": "rtmw2d-fullrate",
       "weight": 0.25
     }
   ],
   "threshold": 0.7,
-  "nms_iou": 0.3,
+  "nms_iou": 0.2,
   "offset_scale": 32.0,
   "selection": {
     "split": "last 4 of 40 BoxingWeb training matches",
+    "match_ids": [
+      "2024-03-08_Andrei-Aradoaie_Kaan-Aykutsun_3",
+      "2024-03-10_Mindaugas-Gedminas_Pylyp-Akilov_2",
+      "2024-03-11_Nurbek-Oralbay_Kelyn-Cassidy_1",
+      "2024-03-17_Gabrijel-Veocic_Yerassyl-Zhakpekov_3"
+    ],
     "temporal_iou": 0.5,
-    "precision": 0.6702355460385439,
-    "recall": 0.7017937219730942,
-    "f1": 0.6856516976998903
-  }
+    "precision": 0.6962809917355371,
+    "recall": 0.7556053811659192,
+    "f1": 0.7247311827956989,
+    "tp": 337,
+    "fp": 147,
+    "fn": 109
+  },
+  "test_evaluated": false,
+  "identity_association": "diagnostic oracle association; replace with UVE-style tracking before deployment"
 }

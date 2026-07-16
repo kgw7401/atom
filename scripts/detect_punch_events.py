@@ -27,6 +27,10 @@ from atom.pose_features import extract_boxer_pose_features, select_pose_feature_
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--pose", type=Path, required=True, help="Canonical red/blue tracked-pose pickle.")
+    parser.add_argument(
+        "--pose-variant", action="append", default=[], metavar="NAME=PATH",
+        help="Additional canonical pose source for a mixed-rate ensemble; repeat as needed.",
+    )
     parser.add_argument("--checkpoint", type=Path, default=Path("results/boxmind-anchor-free-gt-pose.pt"))
     parser.add_argument("--ensemble", type=Path, default=None,
                         help="Optional JSON ensemble specification; overrides --checkpoint.")
@@ -41,6 +45,14 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
+    pose_variants = {"default": args.pose}
+    for value in args.pose_variant:
+        if "=" not in value:
+            raise ValueError("--pose-variant must use NAME=PATH")
+        name, path = value.split("=", 1)
+        if not name or not path:
+            raise ValueError("--pose-variant must use non-empty NAME=PATH")
+        pose_variants[name] = Path(path)
     if args.ensemble:
         specification = json.loads(args.ensemble.read_text())
         component_specs = specification["components"]
@@ -64,7 +76,13 @@ def main() -> None:
         )
         model.load_state_dict(checkpoint["state_dict"])
         model.eval()
-        components.append((float(component["weight"]), checkpoint, model, mean))
+        pose_variant = str(component.get("pose_variant", "default"))
+        if pose_variant not in pose_variants:
+            raise ValueError(
+                f"Ensemble component requires pose variant {pose_variant!r}; "
+                f"pass --pose-variant {pose_variant}=PATH"
+            )
+        components.append((float(component["weight"]), checkpoint, model, mean, pose_variants[pose_variant]))
     total_weight = sum(component[0] for component in components)
     if not np.isclose(total_weight, 1.0):
         raise ValueError(f"Ensemble component weights must sum to 1, got {total_weight}")
@@ -79,10 +97,10 @@ def main() -> None:
     frame_count = None
     for side in ("red", "blue"):
         component_logits = []
-        for weight, checkpoint, model, mean in components:
+        for weight, checkpoint, model, mean, pose_path in components:
             feature_mode = str(checkpoint.get("feature_mode", "absolute"))
             features = select_pose_feature_channels(extract_boxer_pose_features(
-                args.pose, side, bool(checkpoint.get("include_opponent", False)), feature_mode,
+                pose_path, side, bool(checkpoint.get("include_opponent", False)), feature_mode,
             ), int(checkpoint.get("pose_channels", 5)), feature_mode)
             frame_count = len(features) if frame_count is None else min(frame_count, len(features))
             std = np.asarray(checkpoint["feature_std"], dtype=np.float32)
@@ -102,6 +120,7 @@ def main() -> None:
     output = {
         "model": specification.get("model", "boxmind-anchor-free-tcn-ensemble") if specification else first_checkpoint.get("model", "boxmind-anchor-free-tcn"),
         "pose_path": str(args.pose.resolve()),
+        "pose_variants": {name: str(path.resolve()) for name, path in pose_variants.items()},
         "frame_count": int(frame_count or 0),
         "threshold": threshold,
         "events": [

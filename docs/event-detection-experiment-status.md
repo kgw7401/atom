@@ -11,14 +11,19 @@ held-out test labels have not been used for model selection.
 
 ## Current result
 
-- Best GT-free validation result: F1 0.7069 (precision 0.6925, recall 0.7220).
-  This is an equal-weight ensemble of two existing RTMW 2D models, the composite
-  2D+depth TCN, and the composite 2D+depth BiGRU.
+- Best video-estimated-pose validation result: F1 0.7247 (precision 0.6963,
+  recall 0.7556). It equally combines stride-3 2D+depth TCN/BiGRU with
+  full-rate opponent-relative TCN/MSTCN models. Boxer identity is still
+  associated diagnostically with GT tracks, so this is not yet a fully
+  GT-independent video pipeline.
 - Best single full-frame-rate RTMW 2D model: F1 0.6602 (precision 0.7165,
   recall 0.6121), using actor-only hybrid-motion features and a TCN. A
   multi-scale TCN subsequently improved the best single-model result to F1
   0.6659 (precision 0.6824, recall 0.6502).
 - Best single stride-3 composite 2D+depth model: F1 0.6505.
+- Best single opponent-relative kinematic model: F1 0.6867 (precision 0.7088,
+  recall 0.6659). Arm-only kinematics scored 0.6659, while combining all arm
+  and relative features scored 0.6385.
 - GT-pose diagnostics peak at about F1 0.7495 with BiGRU. This is diagnostic
   only and is not part of the deployable ensemble.
 - Target remaining: F1 greater than 0.783 on validation, followed by one final
@@ -37,8 +42,8 @@ All large experimental data was moved out of `/tmp` so it survives a restart:
   test matches.
 - `rtmw2d-fullrate-3d-stride3`: complete full-rate 2D plus stride-3 RTMW3D
   depth composite data for 40 train + 10 test matches.
-- `artifacts`: 79 checkpoints and experiment reports, including the best
-  GT-free ensemble and full-rate TCN.
+- `artifacts`: 111 checkpoints and experiment reports, including the best
+  cross-rate kinematic ensemble and full-rate models.
 - `models`, `mmpose-source`, and `venv`: pose weights, configs/source, and a
   verified runnable Python environment. The environment currently imports
   PyTorch 2.13.0 and MMPose 1.3.2 successfully.
@@ -75,6 +80,12 @@ Latest validation experiments (held-out training matches only):
 - Three positive windows per event: F1 0.6458.
 - Focal alpha 0.99: F1 0.6127.
 - Full-rate multi-lag input features: F1 0.6471.
+- Arm-only kinematic features: F1 0.6659.
+- Opponent-relative features: F1 0.6867.
+- Arm plus opponent-relative features: F1 0.6385.
+- Full-rate kinematic ensemble: F1 0.7056.
+- Cross-rate depth plus diverse kinematic ensemble: F1 0.7247 (precision
+  0.6963, recall 0.7556).
 
 For correctly matched events from the best full-rate single model, mean
 temporal IoU is 0.7604. Of 446 validation events, 145 have no same-hand
@@ -84,9 +95,9 @@ than boundary regression.
 
 Resume validation work in this order:
 
-1. Add and validate explicit arm-extension/acceleration and opponent-distance
-   kinematic features, targeting the 145 missing candidates.
-2. Combine full-rate and stride-3 model predictions using per-component pose
-   roots, then select weights and thresholds using validation only.
-3. Retrain the selected configuration on all 40 training matches and evaluate
-   the held-out test set exactly once.
+1. Replace diagnostic oracle red/blue association with UVE-style tracking and
+   measure the resulting pose/identity degradation without using punch labels.
+2. Improve precision of the opponent-relative model; current ensemble recall
+   0.7556 is close to the paper's 0.763, but precision 0.6963 trails 0.806.
+3. After the detector configuration is frozen, retrain on all 40 training
+   matches and evaluate the held-out test set exactly once.

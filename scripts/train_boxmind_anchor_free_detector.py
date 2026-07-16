@@ -56,7 +56,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--normalization", choices=("standard", "raw"), default="standard")
     parser.add_argument("--pose-channels", type=int, choices=(2, 5), default=5,
                         help="Use 2D xy only or the paper's 2D xy + 3D xyz input.")
-    parser.add_argument("--feature-mode", choices=("absolute", "local", "absolute-motion", "local-motion", "hybrid-motion", "hybrid-multiscale", "absolute-normalized-3d", "local-normalized-3d", "absolute-depth", "hybrid-depth-motion", "hybrid-motion-3d", "hybrid-multiscale-3d"), default="absolute",
+    parser.add_argument("--feature-mode", choices=("absolute", "local", "absolute-motion", "local-motion", "hybrid-motion", "hybrid-multiscale", "hybrid-kinematic-arm", "hybrid-kinematic-relative", "hybrid-kinematic", "absolute-normalized-3d", "local-normalized-3d", "absolute-depth", "hybrid-depth-motion", "hybrid-motion-3d", "hybrid-multiscale-3d"), default="absolute",
                         help="Use square-normalized image coordinates or actor-centered body-scale coordinates.")
     boxer_input = parser.add_mutually_exclusive_group()
     boxer_input.add_argument("--include-opponent", dest="include_opponent", action="store_true",

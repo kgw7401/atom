@@ -25,6 +25,15 @@ TASK_LABELS = {
     "effect": {"ineffective": 0, "effective": 1},
 }
 
+ARM_KINEMATIC_METRICS = (
+    "extension", "elbow_angle", "wrist_speed_1", "wrist_speed_3",
+    "wrist_acceleration", "extension_rate", "guard_distance",
+)
+RELATIVE_KINEMATIC_METRICS = (
+    "head_distance", "torso_distance", "head_approach", "torso_approach",
+    "head_direction", "torso_direction",
+)
+
 
 @lru_cache(maxsize=2)
 def _load_pose(pose_path: str) -> dict[str, Any]:
@@ -109,6 +118,90 @@ def _local_2d(actor: np.ndarray, opponent: np.ndarray) -> tuple[np.ndarray, np.n
         (actor[:, JOINT_INDEX] - origin[:, None, :]) / shoulder_width[:, None, :],
         (opponent[:, JOINT_INDEX] - origin[:, None, :]) / shoulder_width[:, None, :],
     )
+
+
+def _lag_difference(values: np.ndarray, lag: int = 1) -> np.ndarray:
+    """Return a backward temporal difference with a stable zero-valued prefix."""
+
+    if lag < 1:
+        raise ValueError("lag must be positive")
+    array = np.asarray(values, dtype=np.float32)
+    if len(array) == 0:
+        return array.copy()
+    previous = np.concatenate((np.repeat(array[:1], lag, axis=0), array[:-lag]), axis=0)
+    return array - previous
+
+
+def _kinematic_2d_features(
+    actor: np.ndarray,
+    opponent: np.ndarray,
+    include_arm: bool = True,
+    include_relative: bool = True,
+) -> tuple[np.ndarray, tuple[str, ...]]:
+    """Derive scale-normalized punch kinematics from selected local 2D joints.
+
+    Both inputs use the semantic 14-joint order returned by ``_local_2d``:
+    head, neck, right shoulder/elbow/wrist, left shoulder/elbow/wrist, pelvis,
+    and the leg joints. Coordinates are already actor-centered and normalized
+    by actor shoulder width, so these features are insensitive to translation,
+    zoom, and boxer body size.
+    """
+
+    actor = np.asarray(actor, dtype=np.float32)
+    opponent = np.asarray(opponent, dtype=np.float32)
+    if actor.shape != opponent.shape or actor.ndim != 3 or actor.shape[1:] != (14, 2):
+        raise ValueError("actor and opponent must both have shape [T,14,2]")
+    columns: list[np.ndarray] = []
+    names: list[str] = []
+    arms = {"left": (5, 6, 7), "right": (2, 3, 4)}
+
+    if include_arm:
+        for hand, (shoulder_index, elbow_index, wrist_index) in arms.items():
+            shoulder, elbow, wrist = (
+                actor[:, shoulder_index], actor[:, elbow_index], actor[:, wrist_index]
+            )
+            extension = np.linalg.norm(wrist - shoulder, axis=-1)
+            upper = shoulder - elbow
+            forearm = wrist - elbow
+            cosine = np.sum(_safe_unit(upper) * _safe_unit(forearm), axis=-1)
+            elbow_angle = np.arccos(np.clip(cosine, -1.0, 1.0)) / np.pi
+            velocity = _lag_difference(wrist)
+            columns.extend((
+                extension,
+                elbow_angle,
+                np.linalg.norm(velocity, axis=-1),
+                np.linalg.norm(_lag_difference(wrist, 3), axis=-1) / 3.0,
+                np.linalg.norm(_lag_difference(velocity), axis=-1),
+                _lag_difference(extension[:, None])[:, 0],
+                np.linalg.norm(wrist - actor[:, 0], axis=-1),
+            ))
+            names.extend(f"{hand}_{metric}" for metric in ARM_KINEMATIC_METRICS)
+
+    if include_relative:
+        boxer_distance = np.linalg.norm(opponent[:, 8] - actor[:, 8], axis=-1)
+        columns.extend((boxer_distance, -_lag_difference(boxer_distance[:, None])[:, 0]))
+        names.extend(("boxer_distance", "boxer_closing_speed"))
+        opponent_torso = 0.5 * (opponent[:, 1] + opponent[:, 8])
+        for hand, (_, _, wrist_index) in arms.items():
+            wrist = actor[:, wrist_index]
+            velocity = _lag_difference(wrist)
+            head_vector = opponent[:, 0] - wrist
+            torso_vector = opponent_torso - wrist
+            head_distance = np.linalg.norm(head_vector, axis=-1)
+            torso_distance = np.linalg.norm(torso_vector, axis=-1)
+            columns.extend((
+                head_distance,
+                torso_distance,
+                -_lag_difference(head_distance[:, None])[:, 0],
+                -_lag_difference(torso_distance[:, None])[:, 0],
+                np.sum(_safe_unit(velocity) * _safe_unit(head_vector), axis=-1),
+                np.sum(_safe_unit(velocity) * _safe_unit(torso_vector), axis=-1),
+            ))
+            names.extend(f"{hand}_{metric}" for metric in RELATIVE_KINEMATIC_METRICS)
+
+    if not columns:
+        return np.empty((len(actor), 0), dtype=np.float32), ()
+    return np.nan_to_num(np.stack(columns, axis=1), nan=0.0, posinf=0.0, neginf=0.0), tuple(names)
 
 
 def _resample(sequence: np.ndarray, frames: int) -> np.ndarray:
@@ -214,6 +307,7 @@ def extract_boxer_pose_features(
         raise ValueError(f"Expected red or blue side, got {side!r}")
     modes = {
         "absolute", "local", "absolute-motion", "local-motion", "hybrid-motion", "hybrid-multiscale",
+        "hybrid-kinematic-arm", "hybrid-kinematic-relative", "hybrid-kinematic",
         "absolute-normalized-3d", "local-normalized-3d", "absolute-depth",
         "hybrid-depth-motion", "hybrid-motion-3d", "hybrid-multiscale-3d",
     }
@@ -241,6 +335,9 @@ def extract_boxer_pose_features(
         "hybrid-depth-motion": "hybrid-motion",
         "hybrid-motion-3d": "hybrid-motion",
         "hybrid-multiscale-3d": "hybrid-multiscale",
+        "hybrid-kinematic-arm": "hybrid-motion",
+        "hybrid-kinematic-relative": "hybrid-motion",
+        "hybrid-kinematic": "hybrid-motion",
     }.get(feature_mode, feature_mode)
     if base_mode.startswith("local"):
         pose_2d, opponent_pose_2d = local_2d, opponent_local_2d
@@ -268,6 +365,14 @@ def extract_boxer_pose_features(
     derived_2d_only = not normalized_3d and (base_mode.endswith("motion") or base_mode == "hybrid-multiscale")
     if include_opponent:
         pose_2d = np.concatenate((pose_2d, opponent_pose_2d), axis=1)
+    if feature_mode.startswith("hybrid-kinematic"):
+        include_arm = feature_mode != "hybrid-kinematic-relative"
+        include_relative = feature_mode != "hybrid-kinematic-arm"
+        kinematics, _ = _kinematic_2d_features(
+            local_2d, opponent_local_2d, include_arm=include_arm, include_relative=include_relative,
+        )
+        flattened_pose = pose_2d.reshape(frame_count, -1)
+        return np.concatenate((flattened_pose, kinematics), axis=1).astype(np.float32)
     if derived_2d_only:
         return np.nan_to_num(pose_2d, nan=0.0, posinf=0.0, neginf=0.0).astype(np.float32)
     pose_3d = _local_3d(actor_3d, normalize_scale=normalized_3d)
@@ -293,6 +398,10 @@ def extract_boxer_pose_features(
 def select_pose_feature_channels(features: np.ndarray, pose_channels: int, feature_mode: str) -> np.ndarray:
     """Select 2D or 2D+3D channels while retaining derived motion layouts."""
 
+    if feature_mode.startswith("hybrid-kinematic"):
+        if pose_channels != 2:
+            raise ValueError("Kinematic feature modes require --pose-channels 2.")
+        return features
     if feature_mode.endswith("-3d") or feature_mode in {"absolute-depth", "hybrid-depth-motion"}:
         if pose_channels != 5:
             raise ValueError("3D feature modes require --pose-channels 5.")
