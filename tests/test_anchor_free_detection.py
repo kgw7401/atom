@@ -39,6 +39,20 @@ class AnchorFreeDetectionTests(unittest.TestCase):
         np.testing.assert_array_equal(output["blue_track_ids"], [8, 8])
         np.testing.assert_allclose(output["pose_red_2d"][:, 0, 0], [7, 7])
 
+    def test_uve_refiner_rejects_non_boxer_and_assigns_single_blue(self):
+        tracks = {
+            "track_ids": np.array([[3, 9], [3, 9]], dtype=np.int64),
+            "joints_2d": np.ones((2, 2, 14, 2), dtype=np.float32),
+            "joints_3d": np.ones((2, 2, 14, 3), dtype=np.float32),
+            "identity_probabilities": np.array([
+                [[.05, .05, .90], [.05, .85, .10]],
+                [[.05, .05, .90], [.10, .80, .10]],
+            ]),
+        }
+        output = refine_boxer_tracks(tracks, cadence=10)
+        np.testing.assert_array_equal(output["red_track_ids"], [-1, -1])
+        np.testing.assert_array_equal(output["blue_track_ids"], [9, 9])
+
 
 if __name__ == "__main__":
     unittest.main()

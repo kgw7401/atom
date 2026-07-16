@@ -28,6 +28,10 @@ held-out test labels have not been used for model selection.
   only and is not part of the deployable ensemble.
 - Target remaining: F1 greater than 0.783 on validation, followed by one final
   held-out test evaluation.
+- The diagnostic oracle red/blue association has now been replaced by an
+  inference-time-GT-free UVE-compatible path. On the four validation matches,
+  RGB UVE + BoT-SORT reaches IDF1 0.8983. The opponent-relative detector scores
+  F1 0.6502 on UVE pose versus 0.6867 on oracle-associated pose.
 
 ## Persisted state
 
@@ -95,9 +99,12 @@ than boundary regression.
 
 Resume validation work in this order:
 
-1. Replace diagnostic oracle red/blue association with UVE-style tracking and
-   measure the resulting pose/identity degradation without using punch labels.
-2. Improve precision of the opponent-relative model; current ensemble recall
+1. Extract UVE poses for the 36 detector-training matches and retrain the
+   detector on the actual UVE pose/identity-error distribution.
+2. Replace the RGB histogram descriptor with a stronger appearance embedding
+   or an actual UV-map classifier if the authors release it; current IDF1 is
+   0.8983 versus the paper's 0.985.
+3. Improve precision of the opponent-relative model; current ensemble recall
    0.7556 is close to the paper's 0.763, but precision 0.6963 trails 0.806.
-3. After the detector configuration is frozen, retrain on all 40 training
+4. After the detector configuration is frozen, retrain on all 40 training
    matches and evaluate the held-out test set exactly once.

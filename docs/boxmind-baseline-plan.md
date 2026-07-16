@@ -109,6 +109,8 @@ BoxMind는 경기 결과와 상대 전략 최적화가 중심이다. 이 프로�
 
 이후 논문의 독립 선수별 anchor-free 형식에 맞춘 TCN으로 교체했다. GT pose 전체 test에서 2D+3D F1은 0.750, 2D-only F1은 0.719였다. YOLO 사람 검출과 RTMW3D를 이용해 실제 MP4 한 경기 5,493프레임을 처리했으며, red/blue 대응 성공률은 각각 96.6%, 94.2%였다. 영상 RTMW 2D와 GT 3D를 결합하면 해당 경기의 GT 기준선과 같은 F1 0.748이 나왔지만, RTMW 단안 3D를 넣으면 0.152로 하락했다. 따라서 첫 실제 영상 경로는 단안 3D를 제외한 2D-only로 고정한다. 짧은 누락 보간과 3프레임 평활화 후 실제 영상 F1은 0.603이다. 현재 평가는 GT pose를 선수 red/blue 대응에만 사용한 진단 실험이며, UVE 외형 식별기로 이 oracle 의존성을 제거해야 한다.
 
+2026-07-16에는 이 oracle association을 실제 UVE 호환 경로로 교체했다. 논문의 공개 설명대로 사람을 red boxer, blue boxer, non-boxer로 분류하고 10프레임마다 트랙 신원을 재검증한다. 4D-Humans UV-map 분류기 코드와 가중치는 공개되지 않아, 현재 구현은 BoT-SORT 위치 연속성과 훈련 경기에서 학습한 RGB 의상 descriptor를 사용한다. 검증 4경기 합산 ID precision/recall/IDF1은 0.899/0.897/0.898이다. 같은 상대 관계 펀치 검출기는 oracle association에서 F1 0.687, UVE 포즈에서 F1 0.650을 기록했다. 추론 시 GT 의존성은 제거됐지만, 논문의 UVE IDF1 0.985와는 차이가 있으므로 더 강한 appearance embedding과 UVE 분포 재학습이 필요하다.
+
 후속 실험에서는 train 40경기와 test 10경기, 총 261,372프레임을 모두 YOLO+RTMW-m 2D로 다시 추출했다. RTMW는 매 3프레임마다 실행하고 누락·중간 프레임을 보간한 뒤 3프레임 평활화를 적용했다. 같은 RTMW 분포로 재학습한 actor-only 위치 모델은 test F1 0.611, 절대·선수중심 위치와 속도를 함께 쓰는 모델은 0.634였다. validation에서 선택한 RTMW 두 모델과 기존 GT 2D 모델의 앙상블은 precision 0.686, recall 0.673, F1 0.679를 기록해 GT 2D 기준선의 94.5%를 회복했다. 최종 구성은 `results/rtmw-punch-detector-ensemble.json`에 고정한다.
 
 ### D. 개인 영상 전이 검사
