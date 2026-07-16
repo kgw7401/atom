@@ -38,7 +38,17 @@ VLM/LLM은 영상 속 사실을 단독 판정하지 않는다. 구조화된 이�
 - [영상 포즈 이벤트 검출 결과](results/video-pose-event-detection-report.json): YOLO+RTMW3D 실제 MP4 전처리와 GT/영상 포즈 비교
 - [RTMW 재학습 결과](results/rtmw-adapted-event-detection-report.json): 전체 50경기 영상 포즈 추출, RTMW 분포 재학습 및 앙상블 평가
 - [UVE 검증 결과](results/uve-validation-report.json): GT 없는 red/blue/non-boxer 재식별, IDF1 및 이벤트 성능 비교
+- [최종 이벤트 검출 결과](results/event-detection-final-report.json): 완전한 영상 입력 경로의 held-out test 성능과 경기별 오류
 
 ## 현재 상태
 
-BoxingWeb의 구조 감사와 GT pose 검증을 완료하고, YOLO+RTMW 영상 포즈에서 anchor-free 펀치 검출기를 재학습했다. 상대 선수까지의 거리·접근 방향을 명시적으로 추가한 교차 시간축 앙상블은 검증 F1 0.725를 기록했다. 이후 진단용 GT red/blue association을 제거하기 위해 BoT-SORT 위치 트랙과 매 10프레임 RGB 외형 3분류를 결합한 UVE 호환 모듈을 구현했다. 검증 4경기에서 identity IDF1은 0.898, UVE 포즈 펀치 검출 F1은 0.650이며, 동일 모델의 oracle association F1 0.687 대비 0.036 하락했다. BoxMind의 비공개 UV-map 분류기 대신 RGB descriptor를 사용한 결과이므로, 다음 단계는 UVE 분포로 검출기를 재학습하고 더 강한 appearance embedding으로 신원 정밀도를 높이는 것이다.
+영상에서 GT 없이 펀치 구간을 찾는 1차 이벤트 검출 레이어가 끝까지 연결됐다. `YOLO+BoT-SORT -> RGB UVE 신원 보정 -> RTMW 2D 포즈 -> 시간 모델 앙상블 -> 손별 NMS` 순서로 동작한다. 마지막 4개 train 경기에서 선택한 모델은 UVE 포즈 기준 F1 0.704였고, 전체 40경기로 재학습한 뒤 처음 한 번 평가한 10개 held-out test 경기에서는 precision 0.732, recall 0.600, F1 0.659를 기록했다. 추론 시 GT 의존성은 없다. BoxMind의 0.783에는 못 미치며, 가장 큰 병목은 누락 486건과 논문의 비공개 UV-map UVE 및 추가 BoxingStudio 30경기 학습 데이터가 없다는 점이다.
+
+raw MP4에서 이벤트 JSON까지 한 번에 실행하는 진입점은 `scripts/detect_video_punch_events.py`다. RTMW와 UVE 외형 모델 경로를 함께 넘기면 중간 포즈·트랙과 최종 이벤트가 모두 보존된다. 이미 포즈가 준비됐다면 다음처럼 검출 단계만 실행한다.
+
+```bash
+python scripts/detect_punch_events.py \
+  --pose path/to/uve_pose.pkl \
+  --ensemble results/rtmw-punch-detector-ensemble.json \
+  --output punch_events.json
+```

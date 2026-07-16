@@ -39,6 +39,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--learning-rate", type=float, default=1e-3)
     parser.add_argument("--weight-decay", type=float, default=1e-6)
     parser.add_argument("--scheduler", choices=("none", "cosine"), default="none")
+    parser.add_argument("--scheduler-t-max", type=int, default=None,
+                        help="Cosine schedule horizon; defaults to --epochs (set when reproducing an earlier best epoch).")
     parser.add_argument("--focal-alpha", type=float, default=.9)
     parser.add_argument("--focal-gamma", type=float, default=2.0)
     parser.add_argument("--offset-scale", type=float, default=32.0)
@@ -47,7 +49,7 @@ def parse_args() -> argparse.Namespace:
                         help="Additional positive-frame temporal IoU loss weight.")
     parser.add_argument("--regression-loss", choices=("smooth_l1", "l1"), default="smooth_l1")
     parser.add_argument("--channels", type=int, default=64)
-    parser.add_argument("--architecture", choices=("tcn", "bigru", "mstcn"), default="tcn")
+    parser.add_argument("--architecture", choices=("tcn", "bigru", "mstcn", "tcngru"), default="tcn")
     parser.add_argument("--temporal-depth", type=int, choices=(5, 6, 7), default=5,
                         help="Number of TCN blocks with dilations 1..2^(depth-1).")
     parser.add_argument("--batch-norm", action="store_true")
@@ -228,7 +230,9 @@ def main() -> None:
     ).to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay)
     scheduler = (
-        torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs, eta_min=args.learning_rate * 0.05)
+        torch.optim.lr_scheduler.CosineAnnealingLR(
+            optimizer, T_max=args.scheduler_t_max or args.epochs, eta_min=args.learning_rate * 0.05,
+        )
         if args.scheduler == "cosine" else None
     )
     loader = DataLoader(Windows(
@@ -290,7 +294,7 @@ def main() -> None:
         "model": "boxmind-paper-form-anchor-free-tcn-v2",
         "scope": f"Independent per-boxer full-round {'extracted RTMW' if args.pose_root else 'GT'} "
                  f"{'2D' if args.pose_channels == 2 else '2D+3D'} pose detection.",
-        "configuration": vars(args) | {"data_root": str(args.data_root), "report": str(args.report), "checkpoint": str(args.checkpoint), "device": str(device)},
+        "configuration": vars(args) | {"data_root": str(args.data_root), "pose_root": str(args.pose_root) if args.pose_root else None, "report": str(args.report), "checkpoint": str(args.checkpoint), "device": str(device)},
         "samples": {"train_matches": len({item[0] for item in train}), "validation_matches": len(validation_ids), "test_matches": len({item[0] for item in test})},
         "validation_iou_0.5": best,
         "selected_threshold": best_threshold,

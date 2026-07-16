@@ -100,6 +100,31 @@ class MultiScalePunchDetector(nn.Module):
         return torch.stack([head(temporal).transpose(1, 2) for head in self.head], dim=2)
 
 
+class TCNGRUPunchDetector(nn.Module):
+    """TCN local-motion encoder followed by bidirectional recurrent context."""
+
+    def __init__(self, feature_count: int, channels: int = 64,
+                 dilations: tuple[int, ...] = (1, 2, 4, 8, 16), dropout: float = 0.0) -> None:
+        super().__init__()
+        if channels % 2:
+            raise ValueError("TCN-GRU channels must be even")
+        self.input = nn.Conv1d(feature_count, channels, 1)
+        self.local = nn.Sequential(*[_Block(channels, dilation, False, dropout) for dilation in dilations])
+        self.context = nn.GRU(
+            channels, channels // 2, num_layers=1, batch_first=True,
+            bidirectional=True,
+        )
+        self.fuse = nn.Sequential(nn.Linear(2 * channels, channels), nn.GELU(), nn.Dropout(dropout))
+        self.head = nn.Linear(channels, len(HANDS) * 3)
+
+    def forward(self, features: torch.Tensor) -> torch.Tensor:
+        flattened = features.reshape(features.shape[0], features.shape[1], -1)
+        local = self.local(self.input(flattened.transpose(1, 2))).transpose(1, 2)
+        context, _ = self.context(local)
+        temporal = self.fuse(torch.cat((local, context), dim=-1)) + local
+        return self.head(temporal).reshape(features.shape[0], features.shape[1], len(HANDS), 3)
+
+
 def build_punch_detector(
     architecture: str,
     feature_count: int,
@@ -114,6 +139,8 @@ def build_punch_detector(
         return BidirectionalGRUPunchDetector(feature_count, channels, dropout)
     if architecture == "mstcn":
         return MultiScalePunchDetector(feature_count, channels, dilations, dropout)
+    if architecture == "tcngru":
+        return TCNGRUPunchDetector(feature_count, channels, dilations, dropout)
     raise ValueError(f"Unknown detector architecture: {architecture}")
 
 

@@ -19,6 +19,12 @@ class AnchorFreeDetectionTests(unittest.TestCase):
         model = build_punch_detector("mstcn", feature_count=10, channels=16, dilations=(1, 2))
         self.assertEqual(tuple(model(torch.zeros(2, 12, 5, 2)).shape), (2, 12, 2, 3))
 
+    def test_tcngru_matches_anchor_free_output_shape(self) -> None:
+        import torch
+
+        model = build_punch_detector("tcngru", feature_count=10, channels=16, dilations=(1, 2))
+        self.assertEqual(tuple(model(torch.zeros(2, 12, 5, 2)).shape), (2, 12, 2, 3))
+
     def test_scaled_offsets_round_trip_to_interval(self):
         target, _ = encode_targets([AnchorFreeEvent("red", "left", 10, 18, 1.0)], 32, offset_scale=32)
         logits = np.full_like(target, -20.0)
