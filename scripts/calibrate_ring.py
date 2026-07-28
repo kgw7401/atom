@@ -99,6 +99,89 @@ def ransac_vanishing_point(group, iters=4000, tol_deg=3.0, seed=0):
     return best_V, best_inliers
 
 
+def find_ring_square(bg, V1, V2, horizon_y, focal, cam_h, cx, ppm=110, pad=2.0,
+                     debug_dir=None):
+    """링 캔버스의 네 변을 찾는다.
+
+    먼저 바닥 평면을 링 축에 맞춰 펼친다. 그러면 링 변이 그림의 가로세로와
+    나란해져서 경계를 찾기가 훨씬 쉽다 (원본에서는 비스듬한 사다리꼴이다).
+
+    화면 아래가 잘려 링 앞쪽 변은 보이지 않는다. 하지만 링은 정사각형이므로,
+    좌우 두 변 사이 거리가 곧 한 변의 길이이고 앞쪽 변의 위치가 정해진다.
+    모서리를 짚을 필요가 없다.
+
+    반환: dict (링 좌표계 정의와 네 변의 위치) 또는 None
+    """
+    H, W = bg.shape[:2]
+    e1 = np.array([V2[0] - cx, focal]); e1 /= np.linalg.norm(e1)
+    e2 = np.array([V1[0] - cx, focal]); e2 /= np.linalg.norm(e2)
+    R = np.stack([e1, e2])                       # 카메라 바닥좌표 -> 링 좌표
+
+    # 렌더 범위는 화면 아래쪽 절반의 바닥만 기준으로 잡는다.
+    # 지평선 근처는 몇 픽셀이 수십 미터에 해당해서, 거기까지 포함하면 범위가
+    # 폭발하고 정작 링이 있는 구간이 그림 밖으로 밀려난다.
+    v_near = horizon_y + 0.45 * (H - horizon_y)
+    us, vs = np.meshgrid(np.linspace(0, W - 1, 60), np.linspace(v_near, H - 1, 60))
+    dv = vs - horizon_y
+    Xc, Zc = (us - cx) * cam_h / dv, focal * cam_h / dv
+    ab = np.einsum("ij,jkl->ikl", R, np.stack([Xc, Zc]))
+    a0, a1 = ab[0].min() - pad, ab[0].max() + pad
+    b0, b1 = ab[1].min() - pad, ab[1].max() + pad
+    Wo, Ho = int((a1 - a0) * ppm), int((b1 - b0) * ppm)
+    if Wo < 50 or Ho < 50:
+        return None
+
+    aa, bb = np.meshgrid(np.linspace(a0, a1, Wo), np.linspace(b1, b0, Ho))
+    XZ = np.einsum("ij,jkl->ikl", R.T, np.stack([aa, bb]))
+    with np.errstate(divide="ignore", invalid="ignore"):
+        u = cx + focal * XZ[0] / XZ[1]
+        v = horizon_y + focal * cam_h / XZ[1]
+    bad = (XZ[1] <= 0.2) | ~np.isfinite(u) | ~np.isfinite(v)
+    u[bad], v[bad] = -1, -1
+    top = cv2.remap(bg, u.astype(np.float32), v.astype(np.float32), cv2.INTER_LINEAR,
+                    borderMode=cv2.BORDER_CONSTANT, borderValue=(20, 20, 20))
+
+    hsv = cv2.cvtColor(top, cv2.COLOR_BGR2HSV)
+    h, s, val = hsv[:, :, 0].astype(int), hsv[:, :, 1].astype(int), hsv[:, :, 2].astype(int)
+    m = ((h > 100) & (h < 122) & (s > 35) & (val > 60)).astype(np.uint8)
+    # 로프가 캔버스를 가로로 갈라놓으므로 세로로 길게 닫아 이어붙인다
+    m = cv2.morphologyEx(m, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_RECT, (5, 71)))
+    m = cv2.morphologyEx(m, cv2.MORPH_OPEN, np.ones((9, 9), np.uint8))
+    n, lab, st, _ = cv2.connectedComponentsWithStats(m, 8)
+    if n < 2:
+        return None
+    big = 1 + int(np.argmax(st[1:, cv2.CC_STAT_AREA]))
+    canvas = (lab == big).astype(np.uint8)
+
+    cols, rows = canvas.sum(0), canvas.sum(1)
+    xs = np.nonzero(cols > 0.4 * cols.max())[0]
+    ys = np.nonzero(rows > 0.4 * rows.max())[0]
+    if len(xs) < 10 or len(ys) < 10:
+        return None
+    left, right = a0 + xs.min() / ppm, a0 + xs.max() / ppm
+    far, near_seen = b1 - ys.min() / ppm, b1 - ys.max() / ppm
+    side = right - left
+    near = far - side                     # 정사각형이므로 앞쪽 변이 정해진다
+
+    if debug_dir:
+        vis = top.copy()
+        vis[canvas > 0] = (0.6 * vis[canvas > 0] + 0.4 * np.array([0, 255, 0])).astype(np.uint8)
+        cv2.rectangle(vis, (xs.min(), ys.min()), (xs.max(), ys.max()), (0, 0, 255), 2)
+        y_near = int((b1 - near) * ppm)
+        if 0 <= y_near < Ho:
+            cv2.line(vis, (xs.min(), y_near), (xs.max(), y_near), (255, 0, 255), 2)
+        cv2.imwrite(f"{debug_dir}/ring_rectified.jpg", vis, [cv2.IMWRITE_JPEG_QUALITY, 88])
+
+    return {
+        "axes": R.tolist(),
+        "left_a": float(left), "right_a": float(right),
+        "far_b": float(far), "near_b": float(near),
+        "near_seen_b": float(near_seen),
+        "side_m": float(side),
+        "near_edge_inferred": True,
+    }
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", required=True)
@@ -174,8 +257,20 @@ def main():
     print("  링은 정사각형이므로 1에 가까울수록 좋다.")
     print("  화면 아래가 잘려 링 앞부분이 안 보이므로 1보다 작게 나오는 것이 정상이다.")
 
+    ring = find_ring_square(bg, V1, V2, horizon_y, focal, cam_h, W / 2.0,
+                            debug_dir=args.debug_dir)
+    if ring:
+        print(f"\n링 캔버스 (링 좌표계, m)")
+        print(f"  좌 {ring['left_a']:.2f}  우 {ring['right_a']:.2f}  -> 한 변 {ring['side_m']:.2f} m")
+        print(f"  먼쪽 {ring['far_b']:.2f}   앞쪽 {ring['near_b']:.2f} (정사각형 조건으로 추정)")
+        print(f"  실제로 보이는 앞쪽 끝: {ring['near_seen_b']:.2f}"
+              f"  -> {ring['near_seen_b']-ring['near_b']:.2f} m 는 화면 밖")
+    else:
+        print("\n링 캔버스를 못 찾았다.")
+
     out = {
         "source": "ring_vanishing_points",
+        "ring": ring,
         # 설정 파일에 적힌 그대로 둔다. 펼친 절대경로를 저장하면 남의 기계에서 못 쓴다.
         "source_video": cfg["video"],
         "frame_size": [W, H],

@@ -124,16 +124,31 @@ def main():
     for r in csv.DictReader(open(args.positions)):
         rows[int(r["frame"])] = r
 
-    # 링 범위는 선수들이 실제로 다닌 범위에 여유를 준 것으로 잡는다.
-    # 정확한 링 경계는 아직 없다 — 화면 아래가 잘려 앞쪽 두 모서리가 안 보인다.
-    xs, zs = [], []
-    for r in rows.values():
-        for a, b in (("me_x", "me_z"), ("op_x", "op_z")):
-            if r[a] and float(r["confidence"]) >= 0.6:
-                xs.append(float(r[a])); zs.append(float(r[b]))
-    pad = 0.6
-    x_range = (min(xs) - pad, max(xs) + pad)
-    z_range = (min(zs) - pad, max(zs) + pad)
+    # 링 경계. calibrate_ring.py 가 캔버스에서 검출한 것 (링 좌표계).
+    # 있으면 그림 범위도 링에 맞추고, 좌표도 링 축으로 돌려서 그린다 —
+    # 링이 화면에 반듯한 정사각형으로 나오게 하기 위해서다.
+    g = json.load(open(args.ground))
+    ring_info = g.get("ring")
+    Rax = None
+    ring_poly = None
+    if ring_info:
+        Rax = np.array(ring_info["axes"])          # 카메라 바닥좌표 -> 링 좌표
+        L, Rt = ring_info["left_a"], ring_info["right_a"]
+        Nb, Fb = ring_info["near_b"], ring_info["far_b"]
+        ring_poly = [(L, Nb), (Rt, Nb), (Rt, Fb), (L, Fb)]
+        pad = 0.5
+        x_range = (L - pad, Rt + pad)
+        z_range = (Nb - pad, Fb + pad)
+        print(f"링: 한 변 {ring_info['side_m']:.2f} m  (앞쪽 변은 정사각형 조건으로 추정)")
+    else:
+        xs, zs = [], []
+        for r in rows.values():
+            for a, b in (("me_x", "me_z"), ("op_x", "op_z")):
+                if r[a] and float(r["confidence"]) >= 0.6:
+                    xs.append(float(r[a])); zs.append(float(r[b]))
+        pad = 0.6
+        x_range = (min(xs) - pad, max(xs) + pad)
+        z_range = (min(zs) - pad, max(zs) + pad)
     print(f"그림 범위: x {x_range[0]:.1f}~{x_range[1]:.1f}  z {z_range[0]:.1f}~{z_range[1]:.1f} m")
 
     cap = cv2.VideoCapture(video)
@@ -168,12 +183,21 @@ def main():
             for role, tag in (("me", "me"), ("opponent", "op")):
                 if not r[f"{tag}_x"]:
                     continue
+                x, z = float(r[f"{tag}_x"]), float(r[f"{tag}_z"])
+                fa = float(r[f"{tag}_facing"]) if r[f"{tag}_facing"] else None
+                if Rax is not None:
+                    # 카메라 바닥좌표 -> 링 좌표로 회전
+                    x, z = Rax @ np.array([x, z])
+                    if fa is not None:
+                        v = Rax @ np.array([math.cos(math.radians(fa)),
+                                            math.sin(math.radians(fa))])
+                        fa = math.degrees(math.atan2(v[1], v[0]))
                 rec[role] = {
-                    "x": float(r[f"{tag}_x"]), "z": float(r[f"{tag}_z"]),
-                    "facing": float(r[f"{tag}_facing"]) if r[f"{tag}_facing"] else None,
+                    "x": x, "z": z, "facing": fa,
                     "reach": float(r[f"{tag}_reach"]) if r[f"{tag}_reach"] else None,
                 }
-        right = draw_board(vh, bw, board, rec if conf >= args.min_conf else {}, text, tx=vw)
+        right = draw_board(vh, bw, board, rec if conf >= args.min_conf else {}, text,
+                           ring=ring_poly, tx=vw)
 
         head = f"t={fi/fps:6.2f}s"
         if r and r["distance_m"] and conf >= args.min_conf:
