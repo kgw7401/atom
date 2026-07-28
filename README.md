@@ -76,6 +76,11 @@ frame,time_sec,me_x,me_z,op_x,op_z,distance_m,confidence
 
 거리를 미터로 표시한 확인 영상을 원하면 3번에 `--positions out/IMG_0711.positions.csv` 를 붙인다.
 
+## 지금 상태
+
+**[docs/status.md](docs/status.md) 를 먼저 본다.** 무엇을 재고, 무엇을 계산하고,
+지금 무엇이 막혀 있는지 한 장에 정리돼 있다.
+
 ## 파일 구조
 
 ```
