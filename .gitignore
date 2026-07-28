@@ -1,0 +1,9 @@
+out/
+.omc/
+*.mp4
+*.MOV
+*.pkl
+__pycache__/
+.venv/
+venv/
+.DS_Store
