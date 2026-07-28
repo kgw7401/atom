@@ -27,6 +27,7 @@ from ultralytics import YOLO
 
 # COCO 자세 키포인트 번호
 L_SHOULDER, R_SHOULDER = 5, 6
+L_WRIST, R_WRIST = 9, 10
 L_HIP, R_HIP = 11, 12
 L_ANKLE, R_ANKLE = 15, 16
 
@@ -122,6 +123,23 @@ def foot_point(box, kxy, kcf, frame_h):
     return fx, fy, src, clipped
 
 
+def kp_fields(kxy, kcf):
+    """어깨·손목 좌표를 CSV 칸으로 만든다.
+
+    사거리 반경(어깨~손목 최대 거리)과 정면 방향(어깨선의 수직)을 나중에
+    여기서 구한다. 신뢰도는 좌우 중 낮은 쪽을 쓴다 — 한쪽만 보이면 방향을
+    정할 수 없기 때문이다.
+    """
+    r = {}
+    for tag, li, ri in (("sh", L_SHOULDER, R_SHOULDER), ("wr", L_WRIST, R_WRIST)):
+        pre = {"sh": ("lsh", "rsh"), "wr": ("lwr", "rwr")}[tag]
+        for name, idx in zip(pre, (li, ri)):
+            r[f"{name}_x"] = round(float(kxy[idx][0]), 1)
+            r[f"{name}_y"] = round(float(kxy[idx][1]), 1)
+        r[f"{tag}_conf"] = round(float(min(kcf[li], kcf[ri])), 3)
+    return r
+
+
 def box_iou(a, b):
     ax1, ay1, ax2, ay2 = a
     bx1, by1, bx2, by2 = b
@@ -172,6 +190,9 @@ def main():
         "frame", "time_sec", "fighter", "role", "det_conf",
         "x1", "y1", "x2", "y2", "box_h",
         "foot_x", "foot_y", "foot_src", "foot_clipped",
+        # 어깨와 손목. 사거리 반경과 정면 방향을 여기서 구한다.
+        "lsh_x", "lsh_y", "rsh_x", "rsh_y", "sh_conf",
+        "lwr_x", "lwr_y", "rwr_x", "rwr_y", "wr_conf",
         "torso_L", "id_method", "box_iou",
     ]
     os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)
@@ -293,6 +314,7 @@ def main():
                 "box_h": round(c["h"], 1),
                 "foot_x": round(c["fx"], 1), "foot_y": round(c["fy"], 1),
                 "foot_src": c["src"], "foot_clipped": int(c["clip"]),
+                **kp_fields(c["kxy"], c["kcf"]),
                 "torso_L": "" if c["L"] is None else round(c["L"], 1),
                 "id_method": how[name],
                 "box_iou": round(iou, 3),

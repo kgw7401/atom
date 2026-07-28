@@ -1,49 +1,38 @@
 {
-  "source_csv": "out/IMG_0711.tracks.csv",
+  "source": "ring_vanishing_points",
+  "source_video": "~/Downloads/IMG_0711.MOV",
   "frame_size": [
     1920,
     1080
   ],
-  "fit": {
-    "kind": "upper_envelope_q90",
-    "slope": 0.7952162939064074,
-    "intercept": -6.780354985218973,
-    "r2": 0.9721466557677773,
-    "horizon_y": 8.526428642339896,
-    "n": 11353,
-    "least_squares": {
-      "slope": 0.8047174578558437,
-      "intercept": -53.94146086624523,
-      "r2": 0.8557690214246024
-    }
+  "vanishing_points": {
+    "depth": [
+      1470.889602215508,
+      73.18989174219541
+    ],
+    "lateral": [
+      -9355.724804417854,
+      87.92176714219973
+    ],
+    "support": [
+      15,
+      121
+    ]
   },
-  "per_fighter": {
-    "light": {
-      "slope": 0.7356451359518831,
-      "intercept": 45.2942939146541,
-      "r2": 0.9491365719724012,
-      "n": 5594,
-      "horizon": -61.57084673175451
-    },
-    "dark": {
-      "slope": 0.8694002455554064,
-      "intercept": -75.86400108315561,
-      "r2": 0.9903105929672835,
-      "n": 5759,
-      "horizon": 87.26015603399188
-    }
-  },
-  "person_height_m": 1.73,
-  "camera_height_m": 2.1755087430384212,
-  "focal_px": 1280.0000000000002,
-  "focal_source": "iPhone 14 Pro 24mm 환산값",
+  "focal_px": 2249.258067246251,
+  "focal_35mm_equiv": 42.173588760867204,
   "principal_x": 960.0,
-  "distance_m_summary": {
-    "n": 5969,
-    "min": 0.3124202448178144,
-    "p25": 1.025564882916654,
-    "median": 1.3220620535425809,
-    "p75": 1.5815945610536972,
-    "max": 2.546058293575963
+  "person_height_m": 1.73,
+  "camera_height_m": 2.1203895825400703,
+  "fit": {
+    "kind": "ring_horizon",
+    "horizon_y": 73.88506399829657,
+    "slope": 0.8158878039419472,
+    "n": 5759
+  },
+  "check": {
+    "span_x_m": 3.271039509820149,
+    "span_z_m": 2.7054262622561147,
+    "depth_over_width": 0.8270845564946621
   }
 }
