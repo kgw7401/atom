@@ -22,6 +22,9 @@
 
 학술 용어로는 spatial behavior, 시간까지 포함하면 spatiotemporal behavior 다.
 
+> **하위 프로젝트**: 이 데이터로 복서의 스타일을 분류하는 계획은
+> `docs/style-project.md` 에 있다.
+
 > **개념 정의는 `docs/spatial-concepts.md` 로 옮겼다.**
 > 복싱 자체가 공간을 어떻게 이해하는지(거리 5단계, ring generalship,
 > 각도) 를 정리하고 각 개념의 측정 방법을 붙여놨다. 구현 전에 그 문서를 먼저 본다.
