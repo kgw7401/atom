@@ -31,6 +31,15 @@ import cv2
 import numpy as np
 
 
+# 캔버스로 인정할 색 차이 한계 (CIELAB 거리). 발 위치에서 뽑은 기준색과 비교한다.
+CANVAS_LAB_TOL = 26.0
+
+# 캔버스를 찾을 때 선수 이동 범위에서 이만큼까지만 본다 (m).
+# 링 밖 체육관 바닥이 캔버스와 색이 비슷하면 마스크가 새어나가는데,
+# 선수는 링 안에만 있으므로 이 창 밖은 링일 수 없다.
+CANVAS_SEARCH_MARGIN = 1.6
+
+
 def background_frame(video, n_samples=60):
     """움직이는 사람을 지운 배경. 고르게 뽑은 프레임들의 중앙값."""
     cap = cv2.VideoCapture(video)
@@ -99,8 +108,8 @@ def ransac_vanishing_point(group, iters=4000, tol_deg=3.0, seed=0):
     return best_V, best_inliers
 
 
-def find_ring_square(bg, V1, V2, horizon_y, focal, cam_h, cx, ppm=110, pad=2.0,
-                     debug_dir=None):
+def find_ring_square(bg, V1, V2, horizon_y, focal, cam_h, cx, foot_pts=None,
+                     ppm=110, pad=2.0, debug_dir=None):
     """링 캔버스의 네 변을 찾는다.
 
     먼저 바닥 평면을 링 축에 맞춰 펼친다. 그러면 링 변이 그림의 가로세로와
@@ -141,17 +150,66 @@ def find_ring_square(bg, V1, V2, horizon_y, focal, cam_h, cx, ppm=110, pad=2.0,
     top = cv2.remap(bg, u.astype(np.float32), v.astype(np.float32), cv2.INTER_LINEAR,
                     borderMode=cv2.BORDER_CONSTANT, borderValue=(20, 20, 20))
 
-    hsv = cv2.cvtColor(top, cv2.COLOR_BGR2HSV)
-    h, s, val = hsv[:, :, 0].astype(int), hsv[:, :, 1].astype(int), hsv[:, :, 2].astype(int)
-    m = ((h > 100) & (h < 122) & (s > 35) & (val > 60)).astype(np.uint8)
-    # 로프가 캔버스를 가로로 갈라놓으므로 세로로 길게 닫아 이어붙인다
-    m = cv2.morphologyEx(m, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_RECT, (5, 71)))
+    # 캔버스 색은 영상마다 다르다 (조명, 노출, 화이트밸런스). 고정 임계값을 쓰면
+    # 다른 영상에서 캔버스의 일부만 잡힌다 — 실제로 두 번째 영상에서 그렇게 깨졌다.
+    # 확실한 단서가 있다: 선수는 반드시 캔버스 위에 서 있다. 발이 있던 자리의
+    # 색을 기준으로 삼으면 영상마다 알아서 맞춰진다.
+    lab = cv2.cvtColor(top, cv2.COLOR_BGR2LAB).astype(np.float32)
+    ref = None
+    if foot_pts is not None and len(foot_pts):
+        samples = []
+        for X, Z in foot_pts:
+            a, b = R @ np.array([X, Z])
+            px, py = int((a - a0) * ppm), int((b1 - b) * ppm)
+            if 3 <= px < Wo - 3 and 3 <= py < Ho - 3:
+                samples.append(lab[py - 3:py + 4, px - 3:px + 4].reshape(-1, 3))
+        if len(samples) >= 20:
+            ref = np.median(np.concatenate(samples), axis=0)
+
+    if ref is not None:
+        d = np.linalg.norm(lab - ref, axis=2)
+        m = (d < CANVAS_LAB_TOL).astype(np.uint8)
+    else:
+        # 발 표본이 없으면 예전 방식(푸른 계열 고정 범위)으로 물러난다
+        hsv = cv2.cvtColor(top, cv2.COLOR_BGR2HSV)
+        h, s, val = (hsv[:, :, i].astype(int) for i in range(3))
+        m = ((h > 100) & (h < 122) & (s > 35) & (val > 60)).astype(np.uint8)
+    # 선수가 다닌 범위 밖은 링일 수 없다. 색만으로는 링 밖 바닥과 구분이 안 되는
+    # 영상이 있어서 (두 번째 영상이 그랬다) 물리적 제약으로 잘라낸다.
+    if foot_pts is not None and len(foot_pts) >= 20:
+        ab_f = np.array([R @ np.array([X, Z]) for X, Z in foot_pts])
+        fa0, fa1 = np.percentile(ab_f[:, 0], [1, 99])
+        fb0, fb1 = np.percentile(ab_f[:, 1], [1, 99])
+        gate = np.zeros_like(m)
+        x_lo = max(0, int((fa0 - CANVAS_SEARCH_MARGIN - a0) * ppm))
+        x_hi = min(Wo, int((fa1 + CANVAS_SEARCH_MARGIN - a0) * ppm))
+        y_lo = max(0, int((b1 - (fb1 + CANVAS_SEARCH_MARGIN)) * ppm))
+        y_hi = min(Ho, int((b1 - (fb0 - CANVAS_SEARCH_MARGIN)) * ppm))
+        gate[y_lo:y_hi, x_lo:x_hi] = 1
+        m = m * gate
+
     m = cv2.morphologyEx(m, cv2.MORPH_OPEN, np.ones((9, 9), np.uint8))
-    n, lab, st, _ = cv2.connectedComponentsWithStats(m, 8)
+    n, cc, st, _ = cv2.connectedComponentsWithStats(m, 8)
     if n < 2:
         return None
-    big = 1 + int(np.argmax(st[1:, cv2.CC_STAT_AREA]))
-    canvas = (lab == big).astype(np.uint8)
+
+    # 로프가 캔버스를 가로로 갈라 덩어리가 여러 개가 된다. 세로로 이어붙이는
+    # 연산으로 메우려 했더니 배경 쪽으로도 다리를 놔서 먼쪽 경계가 부풀었다.
+    # 대신 발이 실제로 닿은 덩어리만 고른다 — 배경에는 발이 닿지 않는다.
+    canvas = None
+    if foot_pts is not None and len(foot_pts) >= 20:
+        hits = {}
+        for X, Z in foot_pts:
+            a, b = R @ np.array([X, Z])
+            px, py = int((a - a0) * ppm), int((b1 - b) * ppm)
+            if 0 <= px < Wo and 0 <= py < Ho and cc[py, px] > 0:
+                hits[cc[py, px]] = hits.get(cc[py, px], 0) + 1
+        keep = [k for k, v in hits.items() if v >= max(5, 0.01 * len(foot_pts))]
+        if keep:
+            canvas = np.isin(cc, keep).astype(np.uint8)
+    if canvas is None:
+        big = 1 + int(np.argmax(st[1:, cv2.CC_STAT_AREA]))
+        canvas = (cc == big).astype(np.uint8)
 
     cols, rows = canvas.sum(0), canvas.sum(1)
     xs = np.nonzero(cols > 0.4 * cols.max())[0]
@@ -257,8 +315,18 @@ def main():
     print("  링은 정사각형이므로 1에 가까울수록 좋다.")
     print("  화면 아래가 잘려 링 앞부분이 안 보이므로 1보다 작게 나오는 것이 정상이다.")
 
+    # 폴더를 먼저 만든다. cv2.imwrite 는 경로가 없어도 예외 없이 조용히 실패한다.
+    if args.debug_dir:
+        os.makedirs(args.debug_dir, exist_ok=True)
+    # 캔버스 색 기준으로 쓸 발 위치 (바닥 좌표). 선수는 반드시 캔버스 위에 있다.
+    foot_pts = []
+    for r in allrows:
+        d = float(r["foot_y"]) - horizon_y
+        if d > 1:
+            foot_pts.append(((float(r["foot_x"]) - W / 2.0) * cam_h / d,
+                             focal * cam_h / d))
     ring = find_ring_square(bg, V1, V2, horizon_y, focal, cam_h, W / 2.0,
-                            debug_dir=args.debug_dir)
+                            foot_pts=foot_pts, debug_dir=args.debug_dir)
     if ring:
         print(f"\n링 캔버스 (링 좌표계, m)")
         print(f"  좌 {ring['left_a']:.2f}  우 {ring['right_a']:.2f}  -> 한 변 {ring['side_m']:.2f} m")
