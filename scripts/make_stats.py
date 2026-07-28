@@ -30,6 +30,12 @@ VEL_HALF = 3           # 속도를 잴 때 앞뒤로 몇 프레임을 볼지 (±
 MAX_SPEED = 6.0        # 사람이 낼 수 없는 속도 (m/s). 이보다 크면 추적이 튄 것
 # 피벗: 순간 각속도로 세면 잡음을 센다 (정면이 프레임당 1.3도 떨리면 초당 78도다).
 # 짧은 창 동안 '한 방향으로 꾸준히' 돈 양을 보고, 한 번 센 뒤에는 잠시 쉰다.
+# 정면 방향 신뢰도 하한. 어깨선이 화면에서 수평에 가까우면 3차원 방향이 원래
+# 결정되지 않는다. 이 카메라에서는 71% 의 프레임이 0.2 미만이라, 거르지 않으면
+# 각도 스탯의 대부분이 추측 위에 세워진다.
+# 실측: 하한 0 이면 오차 33도·90도내 90%, 0.3 이면 26도·96% (프레임의 20%).
+FACING_REL_MIN = 0.3
+
 PIVOT_WIN = 0.30       # 회전량을 누적할 창 (초)
 PIVOT_TURN = 45.0      # 그 창에서 이만큼 넘게 돌면 피벗 (도)
 PIVOT_REFRACT = 0.40   # 한 번 세면 이 시간 동안은 다시 안 센다 (초)
@@ -56,6 +62,8 @@ def load(path, fps_hint=59.96):
             "op": np.array([float(r["op_x"]), float(r["op_z"])]),
             "me_face": float(r["me_facing"]) if r["me_facing"] else None,
             "op_face": float(r["op_facing"]) if r["op_facing"] else None,
+            "me_rel": float(r.get("me_facing_rel") or 0),
+            "op_rel": float(r.get("op_facing_rel") or 0),
             "me_reach": float(r["me_reach"]) if r["me_reach"] else None,
             "op_reach": float(r["op_reach"]) if r["op_reach"] else None,
             "d": float(r["distance_m"]),
@@ -236,9 +244,15 @@ def main():
     # ---------------- 각도 ----------------
     L.append("## 각도\n")
     pairs = [f for f in frames if data[f]["me_face"] is not None
-             and data[f]["op_face"] is not None]
+             and data[f]["op_face"] is not None
+             and data[f]["me_rel"] >= FACING_REL_MIN
+             and data[f]["op_rel"] >= FACING_REL_MIN]
+    L.append(f"> **신뢰도 {FACING_REL_MIN} 이상인 프레임만 썼다** — "
+             f"{len(pairs)} 개 ({100*len(pairs)/len(frames):.0f}%).")
+    L.append("> 어깨선이 화면에서 수평에 가까우면 3차원 방향이 원래 결정되지 않는다.")
+    L.append("> 이 카메라 각도에서는 대부분의 프레임이 그렇다. 거르지 않으면 추측을 센다.\n")
     if len(pairs) < 100:
-        L.append("정면 방향이 있는 프레임이 부족하다.\n")
+        L.append("신뢰할 만한 정면 방향 프레임이 부족하다.\n")
     else:
         me_err, op_err = [], []
         for f in pairs:
@@ -263,8 +277,9 @@ def main():
         win = max(2, int(PIVOT_WIN * fps))
         refract = max(1, int(PIVOT_REFRACT * fps))
         piv = {}
-        for who, key in (("me", "me_face"), ("op", "op_face")):
-            seq = [(f, data[f][key]) for f in frames if data[f][key] is not None]
+        for who, key, rkey in (("me", "me_face", "me_rel"), ("op", "op_face", "op_rel")):
+            seq = [(f, data[f][key]) for f in frames
+                   if data[f][key] is not None and data[f][rkey] >= FACING_REL_MIN]
             cnt, last = 0, -10 ** 9
             for i in range(len(seq)):
                 j = i

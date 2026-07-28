@@ -44,7 +44,7 @@ REACH_PCTL = 98       # 사거리 반경으로 쓸 분위수 (최대값은 튀�
 ANKLE_H_RATIO = 0.05
 
 # 정면 방향 시계열 처리 (창 크기는 좌우 각각의 프레임 수)
-FACING_SMOOTH = 6      # 축을 다듬는 창 — 약 0.2초
+FACING_SMOOTH = 10     # 축을 다듬는 창 — 약 0.33초
 FACING_SIGN_WIN = 15   # 앞/뒤 부호 다수결 창 — 약 0.5초
 FACING_FLIP_THR = 0.72 # 부호를 뒤집으려면 반대쪽이 이만큼 우세해야 한다 (관성)
 
@@ -123,31 +123,50 @@ def facing_deg(r, horizon_y, focal, cx):
     if math.hypot(dx, dy) < 8:          # 어깨가 겹쳐 보이면 방향을 못 정한다
         return None
 
-    if abs(dy) < 1e-6:
-        # 어깨선이 화면에서 완전히 수평 = 카메라 축과 나란한 방향
-        sx, sz = 1.0, 0.0
-    else:
-        t = (horizon_y - ly) / dy       # 어깨선을 지평선까지 연장
-        vx = lx + t * dx
-        # 소실점 방향이 곧 3차원 방향 (vx-cx, f) 다.
-        # t>0 이면 소실점이 왼쪽 어깨 너머에 있으므로 그 방향이 '오른어깨->왼어깨' 다.
-        sx, sz = vx - cx, focal
-        if t < 0:
-            sx, sz = -sx, -sz
+    # 두 어깨는 같은 높이에 있다. 그러면 각 어깨의 깊이를 따로 구해 방향을 만들 수 있다.
+    #   깊이  Z_i = f·s/(v_i - v0)      (s = 카메라높이 - 어깨높이)
+    #   좌우  X_i = (u_i - cx)·s/(v_i - v0)
+    # 방향은 두 점의 차이이므로 s 가 약분된다 — 어깨 높이를 몰라도 된다.
+    #
+    # 주의: 예전에 쓰던 '어깨선을 지평선까지 연장' 방식과 이 식은 **같은 값**이다.
+    # 실측으로 확인했다 (차이 중앙값 0.0000도, 프레임간 흔들림 3.82 vs 3.81도).
+    # 한때 연장 방식이 dy→0 에서 발산해 흔들린다고 보고 이 식으로 바꿨는데, 틀린
+    # 진단이었다. 대수적으로 동일한 두 식은 입력 잡음을 똑같이 전달한다. 조건수는
+    # 부동소수점 정밀도의 문제이지 측정 잡음 민감도의 문제가 아니다.
+    #
+    # |dy| 가 작을 때 흔들리는 것은 사실이지만 그것은 **기하학적 한계**다.
+    # 어깨선이 화면에서 수평이면 3차원 방향이 원래 잘 결정되지 않는다.
+    # 식을 바꿔서 될 일이 아니므로, 대신 신뢰도로 표시해 아래 평활화에서 가중한다.
+    dvl, dvr = ly - horizon_y, ry - horizon_y
+    if dvl <= 1 or dvr <= 1:
+        return None
+    sx = (lx - cx) / dvl - (rx - cx) / dvr
+    sz = focal * (1.0 / dvl - 1.0 / dvr)
     n = math.hypot(sx, sz)
+    if n < 1e-9:
+        return None
     sx, sz = sx / n, sz / n
+    # 이 관측을 얼마나 믿을 수 있나.
+    # 어깨선이 화면에서 수평에 가까우면(두 어깨의 화면 y 가 같으면) 3차원 방향이
+    # 원래 잘 결정되지 않는다. 식을 바꿔서 될 일이 아니라 기하학적 한계다.
+    # 실측: |dy|<5px 구간에서 프레임당 흔들림 5.9도, |dy| 20~40px 구간에서 2.1도.
+    # 화면 기울기의 sin 값을 그대로 신뢰도로 쓴다 (해상도에 무관하다).
+    rel = abs(dy) / math.hypot(dx, dy)
     # 앞뒤 구분은 위에서 이미 끝났다. 자세 모델이 좌우 어깨를 구분해 주므로
     # '오른어깨->왼어깨' 벡터 자체가 몸이 어느 쪽을 향하는지를 담고 있다.
     # 그 벡터를 시계방향 90도 돌리면 정면이다.
     #   카메라를 향해 섬: 왼손이 +x 쪽 -> s=(1,0) -> 정면 (0,-1) = 카메라 쪽
     #   등을 돌림      : 왼손이 -x 쪽 -> s=(-1,0) -> 정면 (0,+1) = 카메라 반대
-    return math.degrees(math.atan2(-sx, sz))
+    return math.degrees(math.atan2(-sx, sz)), rel
 
 
-def clean_facing_series(raw, to_opp=None):
+def clean_facing_series(raw, rel=None):
     """정면 방향 시계열을 정리한다.
 
-    raw: {frame: 각도(도)} — 프레임별로 따로 계산한 값
+    raw: {frame: 각도(도)}   — 프레임별로 따로 계산한 값
+    rel: {frame: 0~1}        — 그 프레임 관측의 신뢰도. 어깨선이 화면에서 수평에
+                               가까울수록 방향이 덜 결정되므로 낮다.
+                               축을 평균할 때 가중치로 쓴다.
 
     두 가지를 **따로** 고쳐야 한다. 하나로 묶으면 서로를 망친다.
 
@@ -176,7 +195,10 @@ def clean_facing_series(raw, to_opp=None):
     # 2배 각도를 그냥 절반으로 되돌리면 결과가 (-90, 90] 에 갇혀서, 실제 방향이
     # 그 경계를 지날 때마다 180도씩 튄다. 회전이 아니라 표현의 문제이므로
     # 절반으로 되돌리기 전에 각도를 이어붙인다.
-    dbl = np.stack([np.cos(2 * ang), np.sin(2 * ang)], 1)
+    # 신뢰도가 낮은 프레임은 축 평균에 덜 반영한다. 제곱해서 차이를 벌린다.
+    w = np.array([(rel.get(f, 1.0) if rel else 1.0) ** 2 for f in frames])
+    w = np.clip(w, 0.02, None)
+    dbl = np.stack([np.cos(2 * ang), np.sin(2 * ang)], 1) * w[:, None]
     half = FACING_SMOOTH
     dbl_s = np.empty(len(frames))
     for i in range(len(frames)):
@@ -268,6 +290,7 @@ def main():
     # 정면 방향은 프레임별로 따로 구하면 180도 반전과 잡음이 섞인다.
     # 전체를 한 번 훑어 시계열로 정리한 뒤에 쓴다.
     raw_face = {"me": {}, "opponent": {}}
+    face_rel = {"me": {}, "opponent": {}}
     to_opp = {"me": {}, "opponent": {}}
     for fi in frames:
         rec = by_frame[fi]
@@ -282,13 +305,14 @@ def main():
                 gp[role] = p
             fa = facing_deg(r, horizon, focal, cx)
             if fa is not None:
-                raw_face[role][fi] = fa
+                raw_face[role][fi] = fa[0]
+                face_rel[role][fi] = fa[1]
         if len(gp) == 2:
             for role, other in (("me", "opponent"), ("opponent", "me")):
                 dx = gp[other][0] - gp[role][0]
                 dz = gp[other][1] - gp[role][1]
                 to_opp[role][fi] = math.degrees(math.atan2(dz, dx))
-    facing = {role: clean_facing_series(raw_face[role])
+    facing = {role: clean_facing_series(raw_face[role], face_rel[role])
               for role in ("me", "opponent")}
     for role in ("me", "opponent"):
         print(f"  {role:>8} 정면 방향 {len(facing[role])} 프레임")
@@ -340,6 +364,8 @@ def main():
         for role, tag in (("me", "me"), ("opponent", "op")):
             fa = facing[role].get(fi)
             out[f"{tag}_facing"] = round(fa, 1) if fa is not None else ""
+            fr = face_rel[role].get(fi)
+            out[f"{tag}_facing_rel"] = round(fr, 3) if fr is not None else ""
             out[f"{tag}_reach"] = round(reach_m[role], 3) if role in reach_m else ""
         rows.append(out)
 
@@ -374,7 +400,8 @@ def main():
             r["confidence"] = 0.0
 
     fields = ["frame", "time_sec", "me_x", "me_z", "op_x", "op_z",
-              "me_facing", "op_facing", "me_reach", "op_reach",
+              "me_facing", "op_facing", "me_facing_rel", "op_facing_rel",
+              "me_reach", "op_reach",
               "distance_m", "confidence"]
     with open(args.out, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=fields)

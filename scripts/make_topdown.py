@@ -26,6 +26,9 @@ from ranges import TextLayer
 COL = {"me": (255, 140, 60), "opponent": (80, 220, 255)}   # BGR
 FONT = cv2.FONT_HERSHEY_SIMPLEX
 
+# 이 값 미만이면 화살표를 '추측' 으로 보고 흐리게 그린다 (make_stats 와 같은 기준)
+FACING_REL_SHOW = 0.3
+
 
 class Board:
     """링 좌표(m) 를 그림 좌표(px) 로 바꿔주는 캔버스."""
@@ -89,12 +92,16 @@ def draw_board(bg_h, bg_w, board, rec, text, ring=None, tx=0):
         cv2.circle(img, (u, v), board.r(0.22), (15, 15, 15), 2)
 
         # 정면 화살표. 바닥 좌표의 +z 는 화면에서 위쪽이므로 세로 부호를 뒤집는다.
+        # 신뢰도가 낮으면 흐리고 가늘게 그린다 — 어깨선이 화면에서 수평에 가까우면
+        # 3차원 방향이 원래 결정되지 않으므로, 그 순간의 화살표는 추측이다.
         if r["facing"] is not None:
             a = math.radians(r["facing"])
             L = board.r(r["reach"] or 0.6) + 16
+            solid = (r.get("rel") or 0) >= FACING_REL_SHOW
+            col = c if solid else tuple(int(q * 0.35) for q in c)
             cv2.arrowedLine(img, (u, v),
                             (int(u + L * math.cos(a)), int(v - L * math.sin(a))),
-                            c, 3, tipLength=0.3)
+                            col, 3 if solid else 1, tipLength=0.3)
         text.add("나" if role == "me" else "상대", (tx + u, v - board.r(0.22) - 10),
                  size=21, color=c, anchor="ms")
 
@@ -194,6 +201,7 @@ def main():
                         fa = math.degrees(math.atan2(v[1], v[0]))
                 rec[role] = {
                     "x": x, "z": z, "facing": fa,
+                    "rel": float(r.get(f"{tag}_facing_rel") or 0),
                     "reach": float(r[f"{tag}_reach"]) if r[f"{tag}_reach"] else None,
                 }
         right = draw_board(vh, bw, board, rec if conf >= args.min_conf else {}, text,
