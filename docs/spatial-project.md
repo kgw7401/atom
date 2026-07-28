@@ -22,8 +22,12 @@
 
 학술 용어로는 spatial behavior, 시간까지 포함하면 spatiotemporal behavior 다.
 
+> **데이터 형태는 `docs/spatial-model.md` 에서 정했다.**
+> 위에서 본 링으로 투영하고, 선수를 몸 원 + 사거리 원 두 개로 표현한다.
+> 구현 전에 그 문서를 본다.
+
 > **하위 프로젝트**: 이 데이터로 복서의 스타일을 분류하는 계획은
-> `docs/style-project.md` 에 있다.
+> `docs/style-project.md` 에 있다. 단 그것은 목적지가 아니라 용도 하나다.
 
 > **개념 정의는 `docs/spatial-concepts.md` 로 옮겼다.**
 > 복싱 자체가 공간을 어떻게 이해하는지(거리 5단계, ring generalship,
