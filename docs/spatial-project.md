@@ -22,6 +22,11 @@
 
 학술 용어로는 spatial behavior, 시간까지 포함하면 spatiotemporal behavior 다.
 
+> **개념 정의는 `docs/spatial-concepts.md` 로 옮겼다.**
+> 복싱 자체가 공간을 어떻게 이해하는지(거리 5단계, ring generalship,
+> 각도) 를 정리하고 각 개념의 측정 방법을 붙여놨다. 구현 전에 그 문서를 먼저 본다.
+> 이 문서는 계획과 상태를 다룬다.
+
 ## 왜 이 이름이 중요한가
 
 `distance` 라는 이름 아래서는 거리 하나만 보게 되고 공간 통제 쪽 방법론을
