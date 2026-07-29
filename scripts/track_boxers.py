@@ -29,6 +29,7 @@ from ultralytics import YOLO
 L_SHOULDER, R_SHOULDER = 5, 6
 L_WRIST, R_WRIST = 9, 10
 L_HIP, R_HIP = 11, 12
+NOSE = 0
 L_ANKLE, R_ANKLE = 15, 16
 
 KP_CONF_MIN = 0.5          # 키포인트를 믿을 최소 점수
@@ -131,8 +132,10 @@ def kp_fields(kxy, kcf):
     정할 수 없기 때문이다.
     """
     r = {}
-    for tag, li, ri in (("sh", L_SHOULDER, R_SHOULDER), ("wr", L_WRIST, R_WRIST)):
-        pre = {"sh": ("lsh", "rsh"), "wr": ("lwr", "rwr")}[tag]
+    for tag, li, ri in (("sh", L_SHOULDER, R_SHOULDER), ("wr", L_WRIST, R_WRIST),
+                        ("hip", L_HIP, R_HIP), ("ank", L_ANKLE, R_ANKLE)):
+        pre = {"sh": ("lsh", "rsh"), "wr": ("lwr", "rwr"),
+               "hip": ("lhip", "rhip"), "ank": ("lank", "rank")}[tag]
         for name, idx in zip(pre, (li, ri)):
             r[f"{name}_x"] = round(float(kxy[idx][0]), 1)
             r[f"{name}_y"] = round(float(kxy[idx][1]), 1)
@@ -193,6 +196,10 @@ def main():
         # 어깨와 손목. 사거리 반경과 정면 방향을 여기서 구한다.
         "lsh_x", "lsh_y", "rsh_x", "rsh_y", "sh_conf",
         "lwr_x", "lwr_y", "rwr_x", "rwr_y", "wr_conf",
+        # 엉덩이와 좌우 발목. 정면 방향을 어깨 하나에만 의존하지 않기 위해 같이 뽑는다.
+        # 특히 발목은 바닥 평면 위의 점이라 깊이가 정확하게 나온다.
+        "lhip_x", "lhip_y", "rhip_x", "rhip_y", "hip_conf",
+        "lank_x", "lank_y", "rank_x", "rank_y", "ank_conf",
         "torso_L", "id_method", "box_iou",
     ]
     os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)

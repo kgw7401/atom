@@ -48,6 +48,19 @@ FACING_SMOOTH = 10     # 축을 다듬는 창 — 약 0.33초
 FACING_SIGN_WIN = 15   # 앞/뒤 부호 다수결 창 — 약 0.5초
 FACING_FLIP_THR = 0.72 # 부호를 뒤집으려면 반대쪽이 이만큼 우세해야 한다 (관성)
 
+# 발선(스탠스)을 정면 추정에 함께 쓴다.
+# 어깨선만 쓰면 화면에서 수평에 가까울 때 방향이 안 나오는데, 이 카메라에서는
+# 그런 프레임이 71% 다. 발목은 바닥 평면 위의 점이라 깊이가 정확하게 나오고
+# 대부분의 프레임에서 잡히므로 그 약점을 정확히 메운다.
+#
+# 복싱 스탠스는 두 발이 정면 방향과 어긋나 있다. 그 오프셋은 선수마다 거의
+# 일정하므로, 어깨가 믿을 만한 프레임에서 배워서 나머지 프레임에 적용한다.
+# 실측 오프셋: 네 선수 모두 -38 ~ -47도 (스탠스가 정면과 약 45도라는 상식과 부합).
+ANKLE_SEP_MIN = 0.15   # 두 발이 이보다 가까우면 방향을 못 정한다 (m)
+ANKLE_SEP_FULL = 0.45  # 이 이상 벌어지면 발선 가중치를 최대로 준다 (m)
+ANKLE_W_MAX = 0.7      # 발선의 최대 가중치. 간접 단서이므로 1보다 작게 둔다
+OFFSET_MIN_N = 80      # 오프셋을 배우는 데 필요한 최소 표본
+
 
 def ground_xz(u, v, horizon_y, cam_h, focal, cx, point_h=0.0):
     """화면 좌표 (u,v) 를 바닥 좌표 (x,z) 미터로 바꾼다.
@@ -158,6 +171,79 @@ def facing_deg(r, horizon_y, focal, cx):
     #   카메라를 향해 섬: 왼손이 +x 쪽 -> s=(1,0) -> 정면 (0,-1) = 카메라 쪽
     #   등을 돌림      : 왼손이 -x 쪽 -> s=(-1,0) -> 정면 (0,+1) = 카메라 반대
     return math.degrees(math.atan2(-sx, sz)), rel
+
+
+def ankle_facing(r, horizon_y, focal, cx, cam_h, ankle_h):
+    """발선(오른발 -> 왼발) 방향과 가중치.
+
+    발목은 바닥 평면 위의 점이라 깊이가 정확하게 나온다. 어깨처럼 특이 구성이
+    없다. 다만 발선은 정면 그 자체가 아니라 스탠스만큼 어긋나 있으므로,
+    오프셋을 따로 배워서 더해야 한다 (calibrate_stance_offset).
+
+    반환: (발선 방향(도), 가중치 0~1) 또는 (None, 0)
+    """
+    try:
+        if float(r["ank_conf"]) < KP_MIN:
+            return None, 0.0
+    except (KeyError, ValueError):
+        return None, 0.0
+    pts = []
+    for pre in ("rank", "lank"):
+        p = ground_xz(float(r[f"{pre}_x"]), float(r[f"{pre}_y"]),
+                      horizon_y, cam_h, focal, cx, ankle_h)
+        if p is None:
+            return None, 0.0
+        pts.append(p)
+    (rx, rz), (lx, lz) = pts
+    sep = math.hypot(lx - rx, lz - rz)
+    if sep < ANKLE_SEP_MIN:
+        return None, 0.0
+    w = ANKLE_W_MAX * min(1.0, (sep - ANKLE_SEP_MIN) / (ANKLE_SEP_FULL - ANKLE_SEP_MIN))
+    return math.degrees(math.atan2(lz - rz, lx - rx)), w
+
+
+def calibrate_stance_offset(sh, sh_rel, ank, min_rel=0.3):
+    """발선과 정면 사이의 각도 차이를 배운다 (선수별 상수).
+
+    어깨가 믿을 만한 프레임에서만 배운다. 각도의 평균이므로 원형 평균을 쓴다.
+    반환: (오프셋(도), 표본 수) 또는 (None, n)
+    """
+    diffs = [math.radians(sh[f] - ank[f])
+             for f in sh if f in ank and sh_rel.get(f, 0) >= min_rel]
+    if len(diffs) < OFFSET_MIN_N:
+        return None, len(diffs)
+    c = float(np.mean(np.cos(diffs)))
+    s = float(np.mean(np.sin(diffs)))
+    return math.degrees(math.atan2(s, c)), len(diffs)
+
+
+def fuse_facing(sh, sh_rel, ank, ank_w, offset):
+    """어깨 단서와 발선 단서를 신뢰도로 가중해 합친다.
+
+    각도이므로 단위벡터로 바꿔 더한 뒤 다시 각도로 되돌린다.
+    합쳐진 벡터의 길이가 곧 그 프레임의 신뢰도가 된다 — 두 단서가 어긋나면
+    짧아지고, 한쪽만 있으면 그쪽 가중치만큼 나온다.
+
+    반환: ({frame: 각도}, {frame: 신뢰도})
+    """
+    out, rel = {}, {}
+    for f in set(sh) | set(ank):
+        vx = vy = 0.0
+        wsum = 0.0
+        if f in sh:
+            w = sh_rel.get(f, 0.0)
+            a = math.radians(sh[f])
+            vx += w * math.cos(a); vy += w * math.sin(a); wsum += w
+        if f in ank and offset is not None:
+            w = ank_w.get(f, 0.0)
+            a = math.radians(ank[f] + offset)
+            vx += w * math.cos(a); vy += w * math.sin(a); wsum += w
+        n = math.hypot(vx, vy)
+        if wsum <= 1e-9 or n <= 1e-9:
+            continue
+        out[f] = math.degrees(math.atan2(vy, vx))
+        rel[f] = n / wsum          # 두 단서가 일치할수록 1에 가깝다
+    return out, rel
 
 
 def clean_facing_series(raw, rel=None):
@@ -291,31 +377,37 @@ def main():
     # 전체를 한 번 훑어 시계열로 정리한 뒤에 쓴다.
     raw_face = {"me": {}, "opponent": {}}
     face_rel = {"me": {}, "opponent": {}}
-    to_opp = {"me": {}, "opponent": {}}
+    ank_dir = {"me": {}, "opponent": {}}
+    ank_wt = {"me": {}, "opponent": {}}
     for fi in frames:
-        rec = by_frame[fi]
-        gp = {}
         for role in ("me", "opponent"):
-            r = rec.get(role)
+            r = by_frame[fi].get(role)
             if r is None:
                 continue
-            ph = ankle_h if r["foot_src"].startswith("ankle") else 0.0
-            p = ground_xz(float(r["foot_x"]), float(r["foot_y"]), horizon, cam_h, focal, cx, ph)
-            if p:
-                gp[role] = p
             fa = facing_deg(r, horizon, focal, cx)
             if fa is not None:
                 raw_face[role][fi] = fa[0]
                 face_rel[role][fi] = fa[1]
-        if len(gp) == 2:
-            for role, other in (("me", "opponent"), ("opponent", "me")):
-                dx = gp[other][0] - gp[role][0]
-                dz = gp[other][1] - gp[role][1]
-                to_opp[role][fi] = math.degrees(math.atan2(dz, dx))
-    facing = {role: clean_facing_series(raw_face[role], face_rel[role])
-              for role in ("me", "opponent")}
+            ad, aw = ankle_facing(r, horizon, focal, cx, cam_h, ankle_h)
+            if ad is not None:
+                ank_dir[role][fi] = ad
+                ank_wt[role][fi] = aw
+
+    # 발선과 정면의 각도 차이를 어깨가 믿을 만한 프레임에서 배운 뒤,
+    # 두 단서를 가중 합성한다.
+    facing, facing_conf = {}, {}
     for role in ("me", "opponent"):
-        print(f"  {role:>8} 정면 방향 {len(facing[role])} 프레임")
+        off, n = calibrate_stance_offset(raw_face[role], face_rel[role], ank_dir[role])
+        if off is None:
+            print(f"  {role:>8} 스탠스 오프셋 학습 실패 (표본 {n}) — 어깨만 쓴다")
+        else:
+            print(f"  {role:>8} 스탠스 오프셋 {off:+.0f}도 (표본 {n})")
+        fused, conf = fuse_facing(raw_face[role], face_rel[role],
+                                  ank_dir[role], ank_wt[role], off)
+        facing[role] = clean_facing_series(fused, conf)
+        facing_conf[role] = conf
+        print(f"  {role:>8} 정면 방향 {len(facing[role])} 프레임 "
+              f"(어깨만이면 {len(raw_face[role])})")
 
     rows = []
     n_impossible = 0
@@ -364,7 +456,7 @@ def main():
         for role, tag in (("me", "me"), ("opponent", "op")):
             fa = facing[role].get(fi)
             out[f"{tag}_facing"] = round(fa, 1) if fa is not None else ""
-            fr = face_rel[role].get(fi)
+            fr = facing_conf[role].get(fi)
             out[f"{tag}_facing_rel"] = round(fr, 3) if fr is not None else ""
             out[f"{tag}_reach"] = round(reach_m[role], 3) if role in reach_m else ""
         rows.append(out)
